@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { initialGameState, initialStatsForScenario, type GameState, type ScenarioId } from "./gameState";
-import { pickEvent, applyEffects, setCustomEvents, customEvents, type GameEvent, type EventChoice } from "./events";
+import { pickEvent, applyEffects, setCustomEvents, customEvents, type GameEvent, type EventChoice, type EventEffect } from "./events";
 import { endOfPeriodTick } from "./finance";
 import { saveGame, loadGame, clearGame } from "./persistence";
 import "./App.css";
@@ -39,6 +39,7 @@ function App() {
     return pickEvent(g);
   });
   const [choiceMade, setChoiceMade] = useState<EventChoice | null>(null);
+  const [selectedChoice, setSelectedChoice] = useState<EventChoice | null>(null);
   const [showSurvey, setShowSurvey] = useState(false);
   const [profile, setProfile] = useState({ knowledge: 'beginner', risk: 'medium', region: 'US', income: 2500, savings: 1000, debt: 0, goals: 'save more' });
   const [loadingAi, setLoadingAi] = useState(false);
@@ -64,20 +65,75 @@ function App() {
   // Backend API base: configurable via VITE_API_BASE, defaults to same host on port 8787
   const apiBase = import.meta.env.VITE_API_BASE ?? `${window.location.protocol}//${window.location.hostname}:8787`;
 
+  // Build a natural-language fallback explanation if a choice lacks `explain`
+  function synthesizeExplanation(effects: EventEffect): string {
+    const parts: string[] = [];
+    const money = (n: number) => `$${Math.abs(n)}`;
+    const plus = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+
+    if (effects.savings) {
+      parts.push(
+        effects.savings < 0
+          ? `use ${money(effects.savings)} of savings`
+          : `add ${money(effects.savings)} to savings`
+      );
+    }
+    if (effects.debt) {
+      parts.push(
+        effects.debt < 0
+          ? `reduce debt by ${money(effects.debt)}`
+          : `increase debt by ${money(effects.debt)}`
+      );
+    }
+    if (effects.income) {
+      parts.push(
+        effects.income > 0
+          ? `increase monthly income by ${money(effects.income)}`
+          : `decrease monthly income by ${money(effects.income)}`
+      );
+    }
+    if (effects.fixedExpenses) {
+      parts.push(
+        effects.fixedExpenses > 0
+          ? `raise monthly fixed expenses by ${money(effects.fixedExpenses)}`
+          : `lower monthly fixed expenses by ${money(effects.fixedExpenses)}`
+      );
+    }
+    if (effects.happiness) {
+      parts.push(`${effects.happiness > 0 ? 'raise' : 'lower'} happiness by ${plus(effects.happiness)}`);
+    }
+    if (effects.stress) {
+      parts.push(`${effects.stress > 0 ? 'raise' : 'lower'} stress by ${plus(effects.stress)}`);
+    }
+    if (effects.impulse) {
+      parts.push(`${effects.impulse > 0 ? 'raise' : 'lower'} impulse by ${plus(effects.impulse)}`);
+    }
+
+    if (parts.length === 0) return 'No immediate changes from this choice.';
+    const first = parts[0];
+    const rest = parts.slice(1).join(', ');
+    return rest ? `This will ${first}, ${rest}.` : `This will ${first}.`;
+  }
+
 
 
   const handleChoice = (choice: EventChoice) => {
     if (choiceMade) return;
-    const newStats = applyEffects(game.stats, choice.effects);
+    setSelectedChoice(choice);
+  };
+
+  const handleConfirm = () => {
+    if (!selectedChoice || choiceMade) return;
+    const newStats = applyEffects(game.stats, selectedChoice.effects);
     setGame((g) => ({
       ...g,
       stats: newStats,
-      log: [...g.log, choice.log],
+      log: [...g.log, selectedChoice.log],
       lastEventId: event.id,
       lastTag: event.tag,
       lastSeen: { ...g.lastSeen, [event.id]: g.stats.month },
     }));
-    setChoiceMade(choice);
+    setChoiceMade(selectedChoice);
   };
 
   const handleNext = () => {
@@ -93,6 +149,7 @@ function App() {
       };
     });
     setChoiceMade(null);
+    setSelectedChoice(null);
   };
 
   const { stats, log } = game;
@@ -126,6 +183,7 @@ function App() {
                 setGame(newState);
                 setShowSurvey(true);
                 setChoiceMade(null);
+                setSelectedChoice(null);
                 return;
               }
               // For predefined scenarios, do not show survey, just use predefined events
@@ -134,6 +192,7 @@ function App() {
               setGame(newState);
               setEvent(pickEvent(newState));
               setChoiceMade(null);
+              setSelectedChoice(null);
               setShowSurvey(false);
             }}
           >
@@ -159,6 +218,7 @@ function App() {
               setGame(fresh);
               setEvent(pickEvent(fresh));
               setChoiceMade(null);
+              setSelectedChoice(null);
             }}
           >
             New Game
@@ -203,6 +263,7 @@ function App() {
                   setGame(newState);
                   setEvent(pickEvent(newState));
                   setChoiceMade(null);
+                  setSelectedChoice(null);
                   setShowSurvey(false);
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : String(err);
@@ -285,7 +346,9 @@ function App() {
                       className={`px-4 py-2 rounded border text-left ${
                         choiceMade?.id === choice.id
                           ? "bg-blue-200 border-blue-400"
-                          : "bg-white border-gray-300 hover:bg-blue-50"
+                          : (selectedChoice?.id === choice.id
+                              ? "bg-blue-50 border-blue-400"
+                              : "bg-white border-gray-300 hover:bg-blue-50")
                       }`}
                       onClick={() => handleChoice(choice)}
                       disabled={!!choiceMade}
@@ -298,13 +361,27 @@ function App() {
               {choiceMade && (
                 <div className="mb-4 text-green-700 font-medium">{choiceMade.log}</div>
               )}
-              <button
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
-                onClick={handleNext}
-                disabled={!choiceMade}
-              >
-                Next
-              </button>
+              <div className="mt-2 flex gap-2">
+                <button
+                  className="px-4 py-2 bg-emerald-600 text-white rounded disabled:bg-gray-400"
+                  onClick={handleConfirm}
+                  disabled={!selectedChoice || !!choiceMade}
+                >
+                  Confirm
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
+                  onClick={handleNext}
+                  disabled={!choiceMade}
+                >
+                  Next
+                </button>
+              </div>
+              {choiceMade && (
+                <div className="mt-3 p-3 border rounded text-sm text-gray-700 bg-gray-50">
+                  {choiceMade.explain ?? synthesizeExplanation(choiceMade.effects)}
+                </div>
+              )}
               <div className="mt-6">
                 <h3 className="font-semibold mb-1">Log</h3>
                 <ul className="text-xs text-gray-600 max-h-40 overflow-y-auto list-disc pl-4">

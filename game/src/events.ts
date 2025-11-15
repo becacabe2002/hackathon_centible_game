@@ -18,6 +18,7 @@ export type EventChoice = {
   label: string;
   effects: EventEffect;
   log: string;
+  explain?: string; // natural-language explanation shown after confirm
 };
 
 export type GameEvent = {
@@ -47,19 +48,22 @@ export function setCustomEvents(events: GameEvent[]) {
         id: "pay-500",
         label: "Pay $500 from savings to reduce debt",
         effects: { savings: -500, debt: -500, stress: -2, happiness: 2 },
-        log: "You made an extra payment and reduced your debt."
+        log: "You made an extra payment and reduced your debt.",
+        explain: "Paying $500 now lowers your debt balance and slightly reduces stress, at the cost of using some savings."
       },
       {
         id: "pay-1000",
         label: "Pay $1000 from savings to reduce debt",
         effects: { savings: -1000, debt: -1000, stress: -4, happiness: 4 },
-        log: "You made a large payment and significantly reduced your debt."
+        log: "You made a large payment and significantly reduced your debt.",
+        explain: "A larger lump-sum payment cuts your debt faster, easing stress more, but uses more of your savings."
       },
       {
         id: "skip",
         label: "Skip payment (no change)",
         effects: {},
-        log: "You skipped a payment this month."
+        log: "You skipped a payment this month.",
+        explain: "You keep your savings intact this month, but your debt doesn't shrink and interest may keep stress elevated."
       }
     ]
   };
@@ -74,19 +78,22 @@ export function setCustomEvents(events: GameEvent[]) {
         id: "cut-100",
         label: "Negotiate and cut fixed expenses by $100",
         effects: { fixedExpenses: -100, stress: 1, happiness: 1 },
-        log: "You successfully negotiated your bills and reduced your fixed expenses."
+        log: "You successfully negotiated your bills and reduced your fixed expenses.",
+        explain: "Lower monthly bills improve your budget a bit and feel like a win, slightly boosting mood."
       },
       {
         id: "cut-200",
         label: "Switch to a cheaper plan (cut $200, -2 happiness)",
         effects: { fixedExpenses: -200, happiness: -2 },
-        log: "You switched to a cheaper plan and saved money, but lost some perks."
+        log: "You switched to a cheaper plan and saved money, but lost some perks.",
+        explain: "A bigger monthly saving improves your budget more, but losing perks makes you a bit less happy."
       },
       {
         id: "skip",
         label: "Do nothing",
         effects: {},
-        log: "You decided not to change your bills this month."
+        log: "You decided not to change your bills this month.",
+        explain: "You avoid any hassle now, but your ongoing bills continue unchanged."
       }
     ]
   };
@@ -157,8 +164,8 @@ const classicEvents: GameEvent[] = [
     tag: "career",
     cooldown: 3,
     choices: [
-      { id: "accept", label: "Accept the side gig (+$200, +5 stress)", effects: { savings: 200, stress: 5 }, log: "You worked the side gig and earned extra cash, but it was tiring." },
-      { id: "decline", label: "Decline (no change)", effects: {}, log: "You declined the side gig and kept your free time." },
+      { id: "accept", label: "Accept the side gig (+$200, +5 stress)", effects: { savings: 200, stress: 5 }, log: "You worked the side gig and earned extra cash, but it was tiring.", explain: "Taking the gig brings in extra money but costs time and energy, increasing stress." },
+      { id: "decline", label: "Decline (no change)", effects: {}, log: "You declined the side gig and kept your free time.", explain: "You preserve your free time and avoid extra stress, but miss out on extra income." },
     ],
   },
   {
@@ -168,8 +175,8 @@ const classicEvents: GameEvent[] = [
     tag: "risk",
     cooldown: 2,
     choices: [
-      { id: "buy", label: "Buy it (-$100, +10 happiness, +10 impulse)", effects: { savings: -100, happiness: 10, impulse: 10 }, log: "You bought the gadget. It's fun, but your wallet is lighter." },
-      { id: "skip", label: "Skip (-5 impulse, +2 stress)", effects: { impulse: -5, stress: 2 }, log: "You resisted the urge, but it took some willpower." },
+      { id: "buy", label: "Buy it (-$100, +10 happiness, +10 impulse)", effects: { savings: -100, happiness: 10, impulse: 10 }, log: "You bought the gadget. It's fun, but your wallet is lighter.", explain: "Purchasing gives a short-term happiness boost but reduces savings and reinforces impulsive spending." },
+      { id: "skip", label: "Skip (-5 impulse, +2 stress)", effects: { impulse: -5, stress: 2 }, log: "You resisted the urge, but it took some willpower.", explain: "Resisting builds discipline (lower impulse) but costs a bit of willpower, adding slight stress." },
     ],
     condition: (s) => s.savings > 100,
   },
@@ -180,8 +187,8 @@ const classicEvents: GameEvent[] = [
     tag: "finance",
     cooldown: 4,
     choices: [
-      { id: "pay", label: "Pay from savings (-$300, +5 stress)", effects: { savings: -300, stress: 5 }, log: "You paid the bill from your savings." },
-      { id: "defer", label: "Defer payment (+$300 debt, +10 stress)", effects: { debt: 300, stress: 10 }, log: "You deferred the bill, but your debt increased." },
+      { id: "pay", label: "Pay from savings (-$300, +5 stress)", effects: { savings: -300, stress: 5 }, log: "You paid the bill from your savings.", explain: "Covering the bill immediately reduces savings and feels stressful in the short term." },
+      { id: "defer", label: "Defer payment (+$300 debt, +10 stress)", effects: { debt: 300, stress: 10 }, log: "You deferred the bill, but your debt increased.", explain: "Delaying payment avoids a savings hit now, but raises your debt and worry about future costs." },
     ],
   },
   {
@@ -191,9 +198,9 @@ const classicEvents: GameEvent[] = [
     tag: "lifestyle",
     cooldown: 6,
     choices: [
-      { id: "upgrade", label: "Upgrade apartment (+$400 fixed expenses, +8 happiness)", effects: { fixedExpenses: 400, happiness: 8 }, log: "You upgraded your apartment. Nicer place, higher costs." },
-      { id: "same", label: "Stay put (no change)", effects: {}, log: "You renewed your current lease." },
-      { id: "roommate", label: "Get a roommate (-$300 fixed expenses, -5 happiness)", effects: { fixedExpenses: -300, happiness: -5 }, log: "You found a roommate and cut expenses, but it's less private." },
+      { id: "upgrade", label: "Upgrade apartment (+$400 fixed expenses, +8 happiness)", effects: { fixedExpenses: 400, happiness: 8 }, log: "You upgraded your apartment. Nicer place, higher costs.", explain: "A nicer home lifts mood but increases monthly costs, tightening your budget." },
+      { id: "same", label: "Stay put (no change)", effects: {}, log: "You renewed your current lease.", explain: "Sticking with your current place keeps both costs and comfort unchanged." },
+      { id: "roommate", label: "Get a roommate (-$300 fixed expenses, -5 happiness)", effects: { fixedExpenses: -300, happiness: -5 }, log: "You found a roommate and cut expenses, but it's less private.", explain: "Sharing housing lowers monthly costs, but reduced privacy may lower happiness." },
     ],
   },
   {
@@ -203,8 +210,8 @@ const classicEvents: GameEvent[] = [
     tag: "career",
     cooldown: 6,
     choices: [
-      { id: "accept", label: "Accept (+$200 income, +5 stress)", effects: { income: 200, stress: 5 }, log: "You took on more responsibilities and got a raise." },
-      { id: "decline", label: "Decline (no change)", effects: {}, log: "You kept your current role." },
+      { id: "accept", label: "Accept (+$200 income, +5 stress)", effects: { income: 200, stress: 5 }, log: "You took on more responsibilities and got a raise.", explain: "Greater responsibility brings more pay but also more pressure and stress." },
+      { id: "decline", label: "Decline (no change)", effects: {}, log: "You kept your current role.", explain: "You avoid added stress but forgo a pay increase, keeping your situation stable." },
     ],
   },
 ];
@@ -223,19 +230,22 @@ const studentEvents: GameEvent[] = [
         id: "pay-500",
         label: "Pay $500 from savings to reduce debt",
         effects: { savings: -500, debt: -500, stress: -2, happiness: 2 },
-        log: "You made an extra payment and reduced your student loan."
+        log: "You made an extra payment and reduced your student loan.",
+        explain: "Paying extra reduces your loan balance sooner and eases stress, but uses savings."
       },
       {
         id: "pay-1000",
         label: "Pay $1000 from savings to reduce debt",
         effects: { savings: -1000, debt: -1000, stress: -4, happiness: 4 },
-        log: "You made a large payment and significantly reduced your student loan."
+        log: "You made a large payment and significantly reduced your student loan.",
+        explain: "A larger payment lowers your loan faster, easing stress more, but costs more savings now."
       },
       {
         id: "skip",
         label: "Skip payment (no change)",
         effects: {},
-        log: "You skipped a payment this month."
+        log: "You skipped a payment this month.",
+        explain: "You keep cash on hand, but your loan balance doesn’t go down."
       }
     ]
   },
@@ -250,13 +260,15 @@ const studentEvents: GameEvent[] = [
         id: "find",
         label: "Find a roommate (cut $200 fixed expenses, -2 happiness)",
         effects: { fixedExpenses: -200, happiness: -2, stress: 1 },
-        log: "You found a roommate and reduced your rent, but lost some privacy."
+        log: "You found a roommate and reduced your rent, but lost some privacy.",
+        explain: "Splitting rent lowers monthly bills, but less privacy can reduce happiness a bit."
       },
       {
         id: "skip",
         label: "Stay solo (no change)",
         effects: {},
-        log: "You decided to keep your place to yourself."
+        log: "You decided to keep your place to yourself.",
+        explain: "You keep your privacy and routine, but your rent stays the same."
       }
     ]
   },
@@ -267,9 +279,9 @@ const studentEvents: GameEvent[] = [
     tag: "finance",
     cooldown: 4,
     choices: [
-      { id: "buy-new", label: "Buy new (-$250)", effects: { savings: -250 }, log: "You bought new textbooks." },
-      { id: "buy-used", label: "Buy used (-$120, +2 stress)", effects: { savings: -120, stress: 2 }, log: "You hunted for used textbooks and saved money." },
-      { id: "borrow", label: "Borrow from library (0$, +5 stress)", effects: { stress: 5 }, log: "You borrowed textbooks and deal with limited time slots." },
+      { id: "buy-new", label: "Buy new (-$250)", effects: { savings: -250 }, log: "You bought new textbooks.", explain: "New books are convenient but cost more, reducing savings." },
+      { id: "buy-used", label: "Buy used (-$120, +2 stress)", effects: { savings: -120, stress: 2 }, log: "You hunted for used textbooks and saved money.", explain: "Used books cost less but take effort to find, adding a bit of stress." },
+      { id: "borrow", label: "Borrow from library (0$, +5 stress)", effects: { stress: 5 }, log: "You borrowed textbooks and deal with limited time slots.", explain: "Borrowing saves money but the limited access can be stressful." },
     ],
   },
   {
@@ -279,8 +291,8 @@ const studentEvents: GameEvent[] = [
     tag: "career",
     cooldown: 3,
     choices: [
-      { id: "apply", label: "Apply (+$150 savings, +5 stress)", effects: { savings: 150, stress: 5 }, log: "You got the campus job and earn a little extra." },
-      { id: "skip", label: "Focus on studies (+2 happiness)", effects: { happiness: 2 }, log: "You focused on studies instead." },
+      { id: "apply", label: "Apply (+$150 savings, +5 stress)", effects: { savings: 150, stress: 5 }, log: "You got the campus job and earn a little extra.", explain: "Working adds income but takes time away, increasing stress." },
+      { id: "skip", label: "Focus on studies (+2 happiness)", effects: { happiness: 2 }, log: "You focused on studies instead.", explain: "Focusing on studies preserves energy and can lift mood, but you miss out on extra income." },
     ],
   },
   {
@@ -290,8 +302,8 @@ const studentEvents: GameEvent[] = [
     tag: "lifestyle",
     cooldown: 5,
     choices: [
-      { id: "cover", label: "Cover their part this month (-$250, +5 stress)", effects: { savings: -250, stress: 5 }, log: "You covered the rent and will talk later." },
-      { id: "landlord", label: "Talk to landlord (+5 stress, potential future change)", effects: { stress: 5 }, log: "You informed the landlord." },
+      { id: "cover", label: "Cover their part this month (-$250, +5 stress)", effects: { savings: -250, stress: 5 }, log: "You covered the rent and will talk later.", explain: "Helping out strains your savings and adds stress, but keeps the household stable this month." },
+      { id: "landlord", label: "Talk to landlord (+5 stress, potential future change)", effects: { stress: 5 }, log: "You informed the landlord.", explain: "Addressing the issue can be stressful now but may lead to a longer-term solution." },
     ],
   },
 ];
@@ -310,19 +322,22 @@ const startupEvents: GameEvent[] = [
         id: "pay-500",
         label: "Pay $500 from savings to reduce debt",
         effects: { savings: -500, debt: -500, stress: -2, happiness: 2 },
-        log: "You made an extra payment and reduced your business loan."
+        log: "You made an extra payment and reduced your business loan.",
+        explain: "Paying down principal reduces future interest and can ease stress a bit."
       },
       {
         id: "pay-1000",
         label: "Pay $1000 from savings to reduce debt",
         effects: { savings: -1000, debt: -1000, stress: -4, happiness: 4 },
-        log: "You made a large payment and significantly reduced your business loan."
+        log: "You made a large payment and significantly reduced your business loan.",
+        explain: "A bigger payment accelerates debt reduction and relief, using more cash now."
       },
       {
         id: "skip",
         label: "Skip payment (no change)",
         effects: {},
-        log: "You skipped a payment this month."
+        log: "You skipped a payment this month.",
+        explain: "You retain liquidity this month, but the loan balance remains."
       }
     ]
   },
@@ -337,19 +352,22 @@ const startupEvents: GameEvent[] = [
         id: "move-remote",
         label: "Switch to remote work (cut $300 fixed expenses, -2 happiness)",
         effects: { fixedExpenses: -300, happiness: -2, stress: 1 },
-        log: "You switched to remote work and reduced your office costs."
+        log: "You switched to remote work and reduced your office costs.",
+        explain: "Cutting office overhead improves runway, though being away from an office can reduce morale for some."
       },
       {
         id: "downsize",
         label: "Move to a smaller office (cut $150 fixed expenses, -1 happiness)",
         effects: { fixedExpenses: -150, happiness: -1 },
-        log: "You moved to a smaller office and saved on rent."
+        log: "You moved to a smaller office and saved on rent.",
+        explain: "A smaller space saves money but can feel like a downgrade, nudging happiness down slightly."
       },
       {
         id: "skip",
         label: "Keep current office (no change)",
         effects: {},
-        log: "You kept your current office setup."
+        log: "You kept your current office setup.",
+        explain: "No immediate changes—costs and comfort remain as they are."
       }
     ]
   },
@@ -360,8 +378,8 @@ const startupEvents: GameEvent[] = [
     tag: "career",
     cooldown: 4,
     choices: [
-      { id: "go", label: "Go (-$300 savings, +10 stress, chance for future raise)", effects: { savings: -300, stress: 10 }, log: "You traveled and pitched the startup." },
-      { id: "remote", label: "Pitch remote (0$, -2 happiness)", effects: { happiness: -2 }, log: "You pitched remotely to save money." },
+      { id: "go", label: "Go (-$300 savings, +10 stress, chance for future raise)", effects: { savings: -300, stress: 10 }, log: "You traveled and pitched the startup.", explain: "Travel costs money and energy now, but could open doors that help later." },
+      { id: "remote", label: "Pitch remote (0$, -2 happiness)", effects: { happiness: -2 }, log: "You pitched remotely to save money.", explain: "Saving cash by staying remote may feel less exciting, slightly lowering happiness." },
     ],
   },
   {
@@ -371,8 +389,8 @@ const startupEvents: GameEvent[] = [
     tag: "finance",
     cooldown: 6,
     choices: [
-      { id: "equity", label: "Take equity (-$200 income, +5 happiness)", effects: { income: -200, happiness: 5 }, log: "You chose equity; money is tight now." },
-      { id: "salary", label: "Keep salary (+$0)", effects: {}, log: "You kept your current compensation." },
+      { id: "equity", label: "Take equity (-$200 income, +5 happiness)", effects: { income: -200, happiness: 5 }, log: "You chose equity; money is tight now.", explain: "Trading salary for equity can feel motivating but reduces near-term income." },
+      { id: "salary", label: "Keep salary (+$0)", effects: {}, log: "You kept your current compensation.", explain: "Sticking with salary maintains predictable pay without extra risk." },
     ],
   },
   {
@@ -382,8 +400,8 @@ const startupEvents: GameEvent[] = [
     tag: "lifestyle",
     cooldown: 6,
     choices: [
-      { id: "rent", label: "Rent (+$200 fixed expenses, +3 happiness)", effects: { fixedExpenses: 200, happiness: 3 }, log: "You rented a desk; productivity improved." },
-      { id: "home", label: "Work from home (no change)", effects: {}, log: "You kept working from home." },
+      { id: "rent", label: "Rent (+$200 fixed expenses, +3 happiness)", effects: { fixedExpenses: 200, happiness: 3 }, log: "You rented a desk; productivity improved.", explain: "A workspace can boost morale and focus, but raises monthly costs." },
+      { id: "home", label: "Work from home (no change)", effects: {}, log: "You kept working from home.", explain: "You keep expenses low and flexibility high by staying at home." },
     ],
   },
 ];

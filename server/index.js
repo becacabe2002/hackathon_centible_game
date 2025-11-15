@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 8787;
 const systemPrompt = `You are a game content designer for a financial life simulator. 
 Generate events as strict JSON following this TypeScript type:
 
-type EventChoice = { id: string; label: string; effects: Partial<{ budget:number; impulse:number; savings:number; debt:number; income:number; fixedExpenses:number; happiness:number; stress:number; }>; log: string };
+type EventChoice = { id: string; label: string; effects: Partial<{ budget:number; impulse:number; savings:number; debt:number; income:number; fixedExpenses:number; happiness:number; stress:number; }>; log: string; explain?: string };
 
 type GameEvent = {
   id: string;
@@ -37,6 +37,7 @@ Rules:
 - Tailor to the provided player profile (knowledge, risk tolerance, region, income, savings, debt, goals).
 - Use small, realistic deltas for effects (e.g., savings +/- 50..500, impulse +/- 1..10, income/fixedExpenses +/- 50..300).
 - Ensure variety of tags and include cooldown to avoid repeats.
+- For each choice, include an "explain" field: 1–2 short sentences in plain language explaining why the effects happen (cause → effect). No Markdown.
 - Output ONLY JSON. No Markdown, no prose.`;
 
 app.post('/api/generate-events', async (req, res) => {
