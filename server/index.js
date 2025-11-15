@@ -62,13 +62,21 @@ Rules:
   • impulse: ±1–10; happiness/stress: ±1–10.
 - Provide concise, varied "explain" text for each choice: 1–2 short sentences with cause→effect reasoning. No Markdown.
 - Include a cooldown on each event to reduce repetition. You may include optional weight to influence distribution.
-- goal.description should summarize the player's main financial goal in 1 short sentence.
-- goal.winCondition must be realistic and achievable given their profile, and may reference savings, debt, income, impulse, stress, happiness, or fixedExpenses.`;
+Goal constraints (strict):
+- The goal must ONLY reflect an improvement over the player’s current status. Choose exactly one stat from ['savings','debt','income','impulse','stress','happiness','fixedExpenses'] and set a target that is strictly better than the current value.
+- Compute the target relative to the current value, not as an absolute or generic threshold:
+  • savings, income: operator ">=" with a realistic +5–20% increase from current; round to sensible increments; cap absolute change at +1500.
+  • debt, fixedExpenses: operator "<=" with a realistic 5–20% decrease from current; round to sensible increments; cap absolute change at -2000 for debt and -1500 for fixedExpenses; do not go below 0 for debt.
+  • stress: operator "<=" with a 5–15 point reduction; floor at 5.
+  • happiness: operator ">=" with a 5–15 point increase; ceiling at 95.
+  • impulse: operator "<=" with a 1–5 point reduction; floor at 0.
+- The winCondition must NOT already be satisfied at generation time.
+- goal.description must explicitly reference the improvement relative to the current value (e.g., "Reduce your debt from $12,000 to about $10,200" or "Lower impulse by 3 points").`;
 
 app.post('/api/generate-events', async (req, res) => {
   try {
     const profile = req.body ?? {};
-    const userPrompt = `Player Profile (JSON): ${JSON.stringify(profile)}\nGenerate tailored events.`;
+    const userPrompt = `Player Profile (JSON): ${JSON.stringify(profile)}\nGenerate tailored events and the improved-status goal.`;
 
     const completion = await client.responses.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
