@@ -206,6 +206,85 @@ function parseUserGoal(goalText, profile) {
   };
 }
 
+// Theme hint extractor parses light narrative cues from the player's goal text
+function extractThemeHints(goalText, profile = {}) {
+  if (!goalText || typeof goalText !== 'string') {
+    return { persona: null, occupation: null, setting: profile?.region || null, timeframe: null, motivation: null, keywords: [] };
+  }
+  const t = goalText.toLowerCase();
+
+  // persona
+  const personaMap = ['elf', 'student', 'parent', 'mom', 'dad', 'freelancer', 'artist', 'teacher', 'nurse', 'engineer', 'developer', 'gamer'];
+  const persona = personaMap.find((p) => t.includes(p)) || null;
+
+  // occupation
+  let occupation = null;
+  if (/\b(toy|toymaker|toy-maker)\b/.test(t) || /workshop/.test(t) || /santa/.test(t)) {
+    occupation = 'toy maker';
+  } else {
+    // "I work as a ...", "I am a ...", "I'm a ...", "as a ..."
+    const m = t.match(/\b(i\s+work\s+as\s+a?n?|i\s*am\s+a?n?|i'm\s+a?n?|as\s+a?n?)\s+([a-zA-Z\- ]{2,40})\b/);
+    if (m && m[2]) {
+      const raw = m[2].trim();
+      // prune trailing context words
+      const stopWords = ['to', 'for', 'in', 'at', 'on', 'with', 'and', 'but', 'while', 'so'];
+      const words = raw.split(/\s+/);
+      const cut = [];
+      for (const w of words) {
+        if (stopWords.includes(w)) break;
+        cut.push(w);
+      }
+      if (cut.length) occupation = cut.join(' ');
+    }
+  }
+
+  // setting
+  let setting = null;
+  if (/north\s*pole/.test(t) || /santa/.test(t) || /workshop/.test(t)) {
+    setting = /workshop/.test(t) ? "Santa's workshop" : 'North Pole';
+  } else if (profile?.region) {
+    setting = String(profile.region);
+  }
+
+  // timeframe
+  let timeframe = null;
+  if (/summer\s*vacation|summer\s*break/.test(t)) timeframe = 'summer vacation';
+  else if (/winter\s*break|the\s*holidays|holiday\b|christmas/.test(t)) timeframe = 'the holidays';
+  else if (/wedding/.test(t)) timeframe = 'wedding';
+  else if (/graduation/.test(t)) timeframe = 'graduation';
+  else if (/semester|term/.test(t)) timeframe = 'semester';
+
+  // motivation
+  let motivation = null;
+  if (/save\s*for\s*(a\s*)?(trip|vacation)/.test(t)) motivation = 'save for vacation';
+  else if (/save\s*for\s*(a\s*)?wedding/.test(t)) motivation = 'save for wedding';
+  else if (/tuition|college|university/.test(t)) motivation = 'save for tuition';
+  else if (/emergency\s*fund|rainy\s*day/.test(t)) motivation = 'build an emergency fund';
+
+  // keywords
+  const keywordSet = new Set();
+  const maybeAdd = (w, rx) => { if (rx.test(t)) keywordSet.add(w); };
+  maybeAdd('Santa', /santa/);
+  maybeAdd('North Pole', /north\s*pole/);
+  maybeAdd('workshop', /workshop/);
+  maybeAdd('toys', /toy|toys/);
+  maybeAdd('holiday', /holiday|christmas/);
+  maybeAdd('summer', /summer/);
+  maybeAdd('wedding', /wedding/);
+  maybeAdd('tuition', /tuition|college|university/);
+  maybeAdd('emergency fund', /emergency\s*fund|rainy\s*day/);
+  maybeAdd('vacation', /vacation|trip/);
+
+  return {
+    persona: persona || null,
+    occupation: occupation || null,
+    setting: setting || null,
+    timeframe: timeframe || null,
+    motivation: motivation || null,
+    keywords: Array.from(keywordSet),
+  };
+}
+
 const systemPrompt = `You are a game content designer for a financial life simulator.
 Generate events and a scenario goal as strict JSON following these TypeScript types:
 
@@ -241,17 +320,22 @@ type EventsResponse = {
 Rules:
 - Return a single JSON object of type EventsResponse. Output ONLY valid JSON for EventsResponse. No Markdown, no prose, no backticks.
 - Tailor events and goal to the provided player profile (knowledge, risk tolerance, region, income, savings, debt, fixedExpenses, goals). Explicitly consider fixedExpenses when scaling money amounts.
+- Contextual Theming: Use NarrativeContext and ThemeHints to ground event titles, descriptions, choice labels, and logs. Aim for 12–16 of the 20 events to directly reference the context while preserving financial realism and tag balance.
 - EventsResponse.events must contain exactly 20 events.
 - Tags must be balanced: exactly 4 'career', 4 'lifestyle', 4 'finance', 4 'social', and 4 'risk' events.
 - Enforce uniqueness: all event ids and titles must be unique. Avoid near-duplicates (do not repeat the same scenario with only numbers changed).
 - Prohibit "Debt Repayment" and "Cut/Negotiate Recurring Expenses" events; those are handled by the game separately. Do not create events primarily about paying down debt or cutting recurring bills.
-- Scale money deltas to the player's profile while keeping realistic caps:
+- Scale money deltas to the player's profile while keeping realistic caps. All financial deltas must respect the player's budget (income - fixedExpenses) and the caps below:
   • income/fixedExpenses deltas: about ±5–20% of the player's income/fixedExpenses, capped within ±1500 absolute; round to sensible increments.
   • savings deltas: about ±5–25% of (income - fixedExpenses) or within ±50–500 when budget is small/negative.
   • debt deltas: about ±3–15% of current debt (use negative for repayments, positive for new debt), cap within ±2000; avoid zero if the event is about debt change.
   • impulse: ±1–10; happiness/stress: ±1–10.
 - Provide concise, varied "explain" text for each choice: 1–2 short sentences with cause→effect reasoning. No Markdown.
 - Include a cooldown on each event to reduce repetition. You may include optional weight to influence distribution.
+- Keep events varied, SFW, tone-appropriate, and non-duplicative.
+
+Style Guidance (prose example, not an output example): If the NarrativeContext suggests an elf working at Santa's workshop saving for a summer vacation, let many events reference the workshop, toy production crunches, and holiday shifts, while choices remain financially grounded (scaled to their budget) and tags stay balanced. Sprinkle light keywords like Santa, North Pole, toys across titles, descriptions, and logs without overdoing it.
+
 Goal constraints (strict):
 - The goal must ONLY reflect an improvement over the player’s current status. Choose exactly one stat from ['savings','debt','income','impulse','stress','happiness','fixedExpenses'] and set a target that is strictly better than the current value.
 - Compute the target relative to the current value, not as an absolute or generic threshold:
@@ -273,7 +357,10 @@ app.post('/api/generate-events', async (req, res) => {
       ? `${parsed.winCondition.stat} ${parsed.winCondition.operator} ${parsed.winCondition.value}`
       : 'none';
 
-    const userPrompt = `Player Profile (JSON): ${JSON.stringify(profile)}\nParsedGoalHint: ${hint}\nNote: Use ParsedGoalHint to theme events and narratives. The server may enforce a specific goal if provided.\nGenerate tailored events and the improved-status goal.`;
+    // Theme hints based on narrative context (goals text)
+    const themeHints = extractThemeHints(String(profile?.goals || ''), profile);
+
+    const userPrompt = `Player Profile (JSON): ${JSON.stringify(profile)}\nNarrativeContext: ${String(profile?.goals || '')}\nThemeHints (JSON): ${JSON.stringify(themeHints)}\nParsedGoalHint: ${hint}\nNote: Heavily use NarrativeContext and ThemeHints to ground event titles, descriptions, choices, and logs, while strictly preserving financial realism, caps, tag balance, and other constraints. The server may enforce a specific goal if provided.\nGenerate tailored events and the improved-status goal.`;
 
     const completion = await client.responses.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
