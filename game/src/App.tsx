@@ -5,27 +5,44 @@ import { endOfPeriodTick } from "./finance";
 import { saveGame, loadGame, clearGame } from "./persistence";
 import "./App.css";
 
-function StatBar({ label, value, min = 0, max = 100, color = "blue" }: { label: string; value: number; min?: number; max?: number; color?: "blue" | "green" | "red" | "yellow" | "emerald" | "indigo" }) {
+function StatBar({ label, value, min = 0, max = 100, color = "blue", icon }: { label: string; value: number; min?: number; max?: number; color?: "blue" | "green" | "red" | "yellow" | "emerald" | "indigo"; icon?: string }) {
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
   const colorClass = (
     {
-      blue: "bg-blue-500",
-      green: "bg-green-500",
-      red: "bg-red-500",
-      yellow: "bg-yellow-500",
-      emerald: "bg-emerald-500",
-      indigo: "bg-indigo-500",
+      blue: "bg-gradient-to-r from-blue-400 to-blue-600",
+      green: "bg-gradient-to-r from-green-400 to-green-600",
+      red: "bg-gradient-to-r from-red-400 to-red-600",
+      yellow: "bg-gradient-to-r from-yellow-400 to-yellow-600",
+      emerald: "bg-gradient-to-r from-emerald-400 to-emerald-600",
+      indigo: "bg-gradient-to-r from-indigo-400 to-indigo-600",
     } as const
-  )[color] ?? "bg-blue-500";
+  )[color] ?? "bg-gradient-to-r from-blue-400 to-blue-600";
+
+  const textColorClass = (
+    {
+      blue: "text-blue-600",
+      green: "text-green-600",
+      red: "text-red-600",
+      yellow: "text-yellow-600",
+      emerald: "text-emerald-600",
+      indigo: "text-indigo-600",
+    } as const
+  )[color] ?? "text-blue-600";
 
   return (
-    <div className="mb-3">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-700">{label}</span>
-        <span className="font-mono text-gray-900">{value}</span>
+    <div className="mb-4">
+      <div className="flex justify-between items-center text-sm mb-2">
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-lg">{icon}</span>}
+          <span className="font-medium text-gray-700">{label}</span>
+        </div>
+        <span className={`font-bold text-sm ${textColorClass}`}>{Math.round(value)}</span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-3">
-        <div className={`${colorClass} h-3 rounded-full`} style={{ width: `${pct}%` }} />
+      <div className="w-full bg-gray-200 rounded-full h-2.5 shadow-sm overflow-hidden">
+        <div 
+          className={`${colorClass} h-2.5 rounded-full transition-all duration-500 ease-out shadow-md`} 
+          style={{ width: `${pct}%` }} 
+        />
       </div>
     </div>
   );
@@ -156,88 +173,93 @@ function App() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow p-8 text-center text-red-600 text-lg">
-          No events available. Please try generating events again or restart the game.
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md">
+          <div className="text-4xl mb-4">⚠️</div>
+          <p className="text-gray-700 text-lg font-semibold mb-2">No Events Available</p>
+          <p className="text-gray-600 text-sm">Please try generating events again or restart the game.</p>
         </div>
       </div>
     );
   }
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <header className="max-w-5xl mx-auto mb-6 flex items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-700">Centible Life</h1>
-          <p className="text-gray-600">A financial life simulator</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <label className="text-sm text-gray-600">Scenario</label>
-          <select
-            className="px-3 py-1 border rounded"
-            value={game.scenarioId}
-            onChange={(e) => {
-              const sc = (e.target as HTMLSelectElement).value as ScenarioId;
-              if (sc === 'custom') {
-                const base = initialStatsForScenario('classic');
-                const newState: GameState = { ...initialGameState, stats: base, scenarioId: 'custom', lastSeen: {}, log: ["Custom (AI) scenario selected. Fill the survey to generate events."] };
-                setGame(newState);
-                setShowSurvey(true);
-                setChoiceMade(null);
-                setSelectedChoice(null);
-                return;
-              }
-              // For predefined scenarios, do not show survey, just use predefined events
-              const freshStats = initialStatsForScenario(sc);
-              const newState: GameState = { ...initialGameState, stats: freshStats, scenarioId: sc, lastSeen: {}, log: [`Scenario set to ${sc}`] };
-              setGame(newState);
-              setEvent(pickEvent(newState));
-              setChoiceMade(null);
-              setSelectedChoice(null);
-              setShowSurvey(false);
-            }}
-          >
-            <option value="classic">Classic</option>
-            <option value="student">Student</option>
-            <option value="startup">Startup</option>
-            <option value="custom">Custom (AI)</option>
-          </select>
-          <button
-            className="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100"
-            onClick={() => {
-              clearGame();
-              if (game.scenarioId === 'custom') {
-                const base = initialStatsForScenario('classic');
-                const fresh: GameState = { ...initialGameState, stats: base, scenarioId: 'custom', lastSeen: {}, log: ["New game (AI) - fill the survey to generate events."] };
-                setGame(fresh);
-                setShowSurvey(true);
-                setChoiceMade(null);
-                return;
-              }
-              const freshStats = initialStatsForScenario(game.scenarioId);
-              const fresh: GameState = { ...initialGameState, stats: freshStats, scenarioId: game.scenarioId, lastSeen: {}, log: ["New game started."] };
-              setGame(fresh);
-              setEvent(pickEvent(fresh));
-              setChoiceMade(null);
-              setSelectedChoice(null);
-            }}
-          >
-            New Game
-          </button>
-          <button
-            className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
-            onClick={() => saveGame(game)}
-          >
-            Save
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <header className="bg-white shadow-md border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                💰 Centible Life
+              </h1>
+              <p className="text-gray-600 text-sm mt-1">Navigate your financial journey</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+              <select
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold text-gray-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200"
+                value={game.scenarioId}
+                onChange={(e) => {
+                  const sc = (e.target as HTMLSelectElement).value as ScenarioId;
+                  if (sc === 'custom') {
+                    const base = initialStatsForScenario('classic');
+                    const newState: GameState = { ...initialGameState, stats: base, scenarioId: 'custom', lastSeen: {}, log: ["Custom (AI) scenario selected. Fill the survey to generate events."] };
+                    setGame(newState);
+                    setShowSurvey(true);
+                    setChoiceMade(null);
+                    setSelectedChoice(null);
+                    return;
+                  }
+                  const freshStats = initialStatsForScenario(sc);
+                  const newState: GameState = { ...initialGameState, stats: freshStats, scenarioId: sc, lastSeen: {}, log: [`Scenario set to ${sc}`] };
+                  setGame(newState);
+                  setEvent(pickEvent(newState));
+                  setChoiceMade(null);
+                  setSelectedChoice(null);
+                  setShowSurvey(false);
+                }}
+              >
+                <option value="classic">🏠 Classic</option>
+                <option value="student">🎓 Student</option>
+                <option value="startup">🚀 Startup</option>
+                <option value="custom">✨ Custom (AI)</option>
+              </select>
+              <button
+                className="px-4 py-2 rounded-lg border-2 border-gray-300 hover:bg-gray-100 font-semibold text-gray-700 transition-all duration-200"
+                onClick={() => {
+                  clearGame();
+                  if (game.scenarioId === 'custom') {
+                    const base = initialStatsForScenario('classic');
+                    const fresh: GameState = { ...initialGameState, stats: base, scenarioId: 'custom', lastSeen: {}, log: ["New game (AI) - fill the survey to generate events."] };
+                    setGame(fresh);
+                    setShowSurvey(true);
+                    setChoiceMade(null);
+                    return;
+                  }
+                  const freshStats = initialStatsForScenario(game.scenarioId);
+                  const fresh: GameState = { ...initialGameState, stats: freshStats, scenarioId: game.scenarioId, lastSeen: {}, log: ["New game started."] };
+                  setGame(fresh);
+                  setEvent(pickEvent(fresh));
+                  setChoiceMade(null);
+                  setSelectedChoice(null);
+                }}
+              >
+                🔄 New Game
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+                onClick={() => saveGame(game)}
+              >
+                💾 Save
+              </button>
+            </div>
+          </div>
         </div>
       </header>
-      <main className="max-w-5xl mx-auto">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         {showSurvey && game.scenarioId === 'custom' ? (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Quick Financial Profile</h2>
-            <form
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-              onSubmit={async (e) => {
+          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Let's Learn About You</h2>
+            <p className="text-gray-600 mb-6">Answer a few questions so we can personalize your financial journey</p>
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={async (e) => {
                 e.preventDefault();
                 setLoadingAi(true);
                 setAiError(null);
@@ -273,83 +295,132 @@ function App() {
                 }
               }}
             >
-              <label className="flex flex-col gap-1">
-                <span className="text-sm text-gray-700">Financial knowledge</span>
-                <select className="border rounded px-2 py-1" value={profile.knowledge} onChange={(e) => setProfile({ ...profile, knowledge: e.target.value })}>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">🧠 Financial Knowledge</span>
+                <select className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.knowledge} onChange={(e) => setProfile({ ...profile, knowledge: e.target.value })}>
+                  <option value="beginner">Beginner - Just starting out</option>
+                  <option value="intermediate">Intermediate - Some experience</option>
+                  <option value="advanced">Advanced - Well-versed</option>
                 </select>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm text-gray-700">Risk tolerance</span>
-                <select className="border rounded px-2 py-1" value={profile.risk} onChange={(e) => setProfile({ ...profile, risk: e.target.value })}>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">📊 Risk Tolerance</span>
+                <select className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.risk} onChange={(e) => setProfile({ ...profile, risk: e.target.value })}>
+                  <option value="low">Low - Play it safe</option>
+                  <option value="medium">Medium - Balanced approach</option>
+                  <option value="high">High - Take bold moves</option>
                 </select>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm text-gray-700">Region</span>
-                <input className="border rounded px-2 py-1" value={profile.region} onChange={(e) => setProfile({ ...profile, region: e.target.value })} />
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">🌍 Region/Country</span>
+                <input className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.region} onChange={(e) => setProfile({ ...profile, region: e.target.value })} placeholder="e.g., US, UK, Singapore" />
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm text-gray-700">Monthly income ($)</span>
-                <input type="number" className="border rounded px-2 py-1" value={profile.income} onChange={(e) => setProfile({ ...profile, income: Number(e.target.value) })} />
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">💵 Monthly Income</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-600">$</span>
+                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.income} onChange={(e) => setProfile({ ...profile, income: Number(e.target.value) })} />
+                </div>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm text-gray-700">Savings ($)</span>
-                <input type="number" className="border rounded px-2 py-1" value={profile.savings} onChange={(e) => setProfile({ ...profile, savings: Number(e.target.value) })} />
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">🏦 Current Savings</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-600">$</span>
+                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.savings} onChange={(e) => setProfile({ ...profile, savings: Number(e.target.value) })} />
+                </div>
               </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-sm text-gray-700">Debt ($)</span>
-                <input type="number" className="border rounded px-2 py-1" value={profile.debt} onChange={(e) => setProfile({ ...profile, debt: Number(e.target.value) })} />
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">💳 Current Debt</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-600">$</span>
+                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.debt} onChange={(e) => setProfile({ ...profile, debt: Number(e.target.value) })} />
+                </div>
               </label>
-              <label className="flex flex-col gap-1 md:col-span-2">
-                <span className="text-sm text-gray-700">Goal</span>
-                <input className="border rounded px-2 py-1" value={profile.goals} onChange={(e) => setProfile({ ...profile, goals: e.target.value })} />
+              <label className="flex flex-col gap-2 md:col-span-2">
+                <span className="font-semibold text-gray-800">🎯 Your Financial Goal</span>
+                <textarea className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.goals} onChange={(e) => setProfile({ ...profile, goals: e.target.value })} placeholder="e.g., Build an emergency fund, pay off debt, invest for retirement..." rows={2} />
               </label>
-              {aiError && <div className="md:col-span-2 text-red-600 text-sm">{aiError}</div>}
-              <div className="md:col-span-2 flex gap-2">
-                <button disabled={loadingAi} className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400" type="submit">
-                  {loadingAi ? 'Generating…' : 'Generate AI Events'}
+              {aiError && <div className="md:col-span-2 bg-red-100 border-2 border-red-400 text-red-800 px-4 py-3 rounded-lg font-semibold">{aiError}</div>}
+              <div className="md:col-span-2 flex gap-3">
+                <button disabled={loadingAi} className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold hover:shadow-lg disabled:opacity-50" type="submit">
+                  {loadingAi ? '⏳ Generating Events...' : '✨ Generate AI Events'}
                 </button>
-                <button type="button" className="px-3 py-2 border rounded" onClick={() => setShowSurvey(false)}>Cancel</button>
+                <button type="button" className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50" onClick={() => setShowSurvey(false)}>Cancel</button>
               </div>
             </form>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <aside className="bg-white rounded-lg shadow p-4 md:sticky md:top-4 h-fit">
-              <div className="mb-3 text-sm text-gray-500">Month: {stats.month}</div>
-              <div className="mb-4 flex flex-col gap-2">
-                <StatBar label="Savings" value={stats.savings} min={0} max={10000} color="emerald" />
-                <StatBar label="Debt" value={stats.debt} min={0} max={10000} color="red" />
-                <StatBar label="Impulse" value={stats.impulse} min={0} max={100} color="red" />
-                <StatBar label="Happiness" value={stats.happiness} min={0} max={100} color="green" />
-                <StatBar label="Stress" value={stats.stress} min={0} max={100} color="red" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Sidebar */}
+            <aside className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 lg:col-span-1 order-2 lg:order-1">
+              <div className="mb-6 pb-4 border-b border-gray-200">
+                <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-4 py-2">
+                  <span className="text-2xl">📅</span>
+                  <span className="font-bold text-gray-800">Month {stats.month}</span>
+                </div>
               </div>
-              <div className="text-sm text-gray-600">
-                <div>Income: ${stats.income}</div>
-                <div>Fixed Expenses: ${stats.fixedExpenses}</div>
-                <div>Budget: ${stats.income - stats.fixedExpenses}</div>
+              
+              <div className="space-y-4 mb-6 pb-4 border-b border-gray-200">
+                <StatBar label="Savings" value={stats.savings} min={0} max={10000} color="emerald" icon="🏦" />
+                <StatBar label="Debt" value={stats.debt} min={0} max={10000} color="red" icon="💳" />
+                <StatBar label="Income" value={stats.income} min={0} max={5000} color="blue" icon="💵" />
+              </div>
+
+              <div className="space-y-4 mb-6 pb-4 border-b border-gray-200">
+                <StatBar label="Happiness" value={stats.happiness} min={0} max={100} color="green" icon="😊" />
+                <StatBar label="Stress" value={stats.stress} min={0} max={100} color="red" icon="😰" />
+                <StatBar label="Impulse" value={stats.impulse} min={0} max={100} color="yellow" icon="🎯" />
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+                <p className="text-xs font-bold text-gray-700 mb-3 uppercase">💰 Financial Overview</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-700">Income:</span>
+                    <span className="font-bold text-blue-600">${stats.income}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700">Expenses:</span>
+                    <span className="font-bold text-orange-600">${stats.fixedExpenses}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-blue-200">
+                    <span className="font-bold text-gray-800">Budget:</span>
+                    <span className={`font-bold ${(stats.income - stats.fixedExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${Math.max(0, stats.income - stats.fixedExpenses)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </aside>
-            <section className="md:col-span-2 bg-white rounded-lg shadow p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold mb-2">{event.title}</h2>
-                <p className="mb-4">{event.description}</p>
-                <div className="flex flex-col gap-2">
+            
+            {/* Main Content */}
+            <section className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 lg:col-span-2 order-1 lg:order-2">
+              <div className="mb-8">
+                <div className="inline-block bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-full mb-4">
+                  <span className={`text-xs font-bold uppercase tracking-wider ${
+                    event.tag === 'career' ? 'text-blue-700' :
+                    event.tag === 'lifestyle' ? 'text-pink-700' :
+                    event.tag === 'social' ? 'text-purple-700' :
+                    event.tag === 'finance' ? 'text-green-700' :
+                    'text-red-700'
+                  }`}>
+                    {event.tag.toUpperCase()}
+                  </span>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h2>
+                <p className="text-gray-700 leading-relaxed mb-6">{event.description}</p>
+                
+                <div className="flex flex-col gap-3">
                   {event.choices.map((choice) => (
                     <button
                       key={choice.id}
-                      className={`px-4 py-2 rounded border text-left ${
+                      className={`px-6 py-3 rounded-lg border-2 text-left font-semibold transition-all ${
                         choiceMade?.id === choice.id
-                          ? "bg-blue-200 border-blue-400"
+                          ? "bg-green-100 border-green-500 text-gray-900"
                           : (selectedChoice?.id === choice.id
-                              ? "bg-blue-50 border-blue-400"
-                              : "bg-white border-gray-300 hover:bg-blue-50")
-                      }`}
+                              ? "bg-blue-100 border-blue-500 text-gray-900"
+                              : "bg-white border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-900")
+                      } disabled:opacity-50`}
                       onClick={() => handleChoice(choice)}
                       disabled={!!choiceMade}
                     >
@@ -358,37 +429,54 @@ function App() {
                   ))}
                 </div>
               </div>
+              
               {choiceMade && (
-                <div className="mb-4 text-green-700 font-medium">{choiceMade.log}</div>
+                <div className="mb-6 p-4 bg-green-100 border-2 border-green-500 rounded-lg">
+                  <p className="text-green-800 font-bold">✅ {choiceMade.log}</p>
+                </div>
               )}
-              <div className="mt-2 flex gap-2">
+              
+              <div className="flex gap-3 mb-6">
                 <button
-                  className="px-4 py-2 bg-emerald-600 text-white rounded disabled:bg-gray-400"
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold disabled:opacity-50 transition-all"
                   onClick={handleConfirm}
                   disabled={!selectedChoice || !!choiceMade}
                 >
-                  Confirm
+                  ✓ Confirm
                 </button>
                 <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded disabled:bg-gray-400"
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 transition-all"
                   onClick={handleNext}
                   disabled={!choiceMade}
                 >
-                  Next
+                  → Next Event
                 </button>
               </div>
+              
               {choiceMade && (
-                <div className="mt-3 p-3 border rounded text-sm text-gray-700 bg-gray-50">
-                  {choiceMade.explain ?? synthesizeExplanation(choiceMade.effects)}
+                <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    <span className="font-bold text-blue-600">📝 Impact: </span>
+                    {choiceMade.explain ?? synthesizeExplanation(choiceMade.effects)}
+                  </p>
                 </div>
               )}
-              <div className="mt-6">
-                <h3 className="font-semibold mb-1">Log</h3>
-                <ul className="text-xs text-gray-600 max-h-40 overflow-y-auto list-disc pl-4">
-                  {log.map((entry, i) => (
-                    <li key={i}>{entry}</li>
-                  ))}
-                </ul>
+              
+              <div className="pt-4 border-t border-gray-200">
+                <h3 className="font-bold text-gray-800 mb-3">📜 Event Log</h3>
+                <div className="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+                  <ul className="text-sm text-gray-700 space-y-2">
+                    {log.slice(0, 10).map((entry, i) => (
+                      <li key={i} className="flex gap-2">
+                        <span className="text-blue-600 flex-shrink-0">→</span>
+                        <span>{entry}</span>
+                      </li>
+                    ))}
+                    {log.length > 10 && (
+                      <li className="text-xs text-gray-500 italic pt-2">... and {log.length - 10} more entries</li>
+                    )}
+                  </ul>
+                </div>
               </div>
             </section>
           </div>
