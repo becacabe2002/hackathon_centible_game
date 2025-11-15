@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { initialGameState, initialStatsForScenario, type GameState, type ScenarioId } from "./gameState";
 import { pickEvent, applyEffects, setCustomEvents, customEvents, type GameEvent, type EventChoice, type EventEffect } from "./events";
 import { endOfPeriodTick } from "./finance";
@@ -58,10 +58,15 @@ function App() {
   });
   const [choiceMade, setChoiceMade] = useState<EventChoice | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<EventChoice | null>(null);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const [holdingChoiceId, setHoldingChoiceId] = useState<string | null>(null);
   const [showSurvey, setShowSurvey] = useState(false);
   const [profile, setProfile] = useState({ knowledge: 'beginner', risk: 'medium', region: 'US', income: 2500, savings: 1000, debt: 0, goals: 'save more' });
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdStartTimeRef = useRef<number | null>(null);
+  const HOLD_TIME = 1500; // 1.5 seconds to confirm
   useEffect(() => {
     saveGame(game);
   }, [game]);
@@ -133,11 +138,70 @@ function App() {
     return rest ? `This will ${first}, ${rest}.` : `This will ${first}.`;
   }
 
-
-
-  const handleChoice = (choice: EventChoice) => {
+  const handleMouseDown = (choice: EventChoice) => {
     if (choiceMade) return;
-    setSelectedChoice(choice);
+    setHoldingChoiceId(choice.id);
+    holdStartTimeRef.current = Date.now();
+    setHoldProgress(0);
+
+    if (holdTimerRef.current) {
+      clearInterval(holdTimerRef.current);
+    }
+
+    holdTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - (holdStartTimeRef.current || 0);
+      const progress = Math.min(100, (elapsed / HOLD_TIME) * 100);
+      setHoldProgress(progress);
+
+      if (elapsed >= HOLD_TIME) {
+        clearInterval(holdTimerRef.current!);
+        holdTimerRef.current = null;
+        setSelectedChoice(choice);
+        setHoldingChoiceId(null);
+        handleConfirmSelection(choice);
+      }
+    }, 16); // ~60fps
+  };
+
+  const handleMouseUp = () => {
+    if (holdTimerRef.current) {
+      clearInterval(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    setHoldingChoiceId(null);
+  };
+
+  const handleConfirmSelection = (choice: EventChoice) => {
+    if (choiceMade) return;
+    setGame((g) => {
+      const newStats = applyEffects(g.stats, choice.effects);
+      const updated: GameState = {
+        ...g,
+        stats: newStats,
+        log: [choice.log, ...g.log],
+        lastEventId: event.id,
+        lastTag: event.tag,
+        lastSeen: { ...g.lastSeen, [event.id]: g.stats.month },
+      };
+      const win = checkWin(updated);
+      const lose = checkLose(updated.stats);
+      if (win.win) {
+        return {
+          ...updated,
+          gameOver: true,
+          result: { status: 'win', message: win.message ?? 'You achieved your goal!' },
+        };
+      }
+      if (lose.lose) {
+        return {
+          ...updated,
+          gameOver: true,
+          result: { status: 'lose', message: lose.message ?? 'Game over.' },
+        };
+      }
+      return updated;
+    });
+    setChoiceMade(choice);
   };
 
   const handleConfirm = () => {
@@ -500,22 +564,36 @@ function App() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">{event.description}</p>
                 
+                <p className="text-center text-sm text-gray-500 mb-4">👇 Hold on a choice for 1.5 seconds to select it</p>
+                
                 <div className="flex flex-col gap-3">
                   {event.choices.map((choice) => (
-                    <button
-                      key={choice.id}
-                      className={`px-6 py-3 rounded-lg border-2 text-left font-semibold transition-all ${
-                        choiceMade?.id === choice.id
-                          ? "bg-green-100 border-green-500 text-gray-900"
-                          : (selectedChoice?.id === choice.id
-                              ? "bg-blue-100 border-blue-500 text-gray-900"
-                              : "bg-white border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-900")
-                      } disabled:opacity-50`}
-                      onClick={() => handleChoice(choice)}
-                      disabled={!!choiceMade}
-                    >
-                      {choice.label}
-                    </button>
+                    <div key={choice.id} className="relative">
+                      <button
+                        onMouseDown={() => handleMouseDown(choice)}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onTouchStart={() => handleMouseDown(choice)}
+                        onTouchEnd={handleMouseUp}
+                        className={`w-full px-6 py-3 rounded-lg border-2 text-left font-semibold transition-all ${
+                          choiceMade?.id === choice.id
+                            ? "bg-green-100 border-green-500 text-gray-900"
+                            : (holdingChoiceId === choice.id
+                                ? "bg-blue-50 border-blue-500 text-gray-900 scale-105"
+                                : "bg-white border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-900")
+                        } disabled:opacity-50 select-none`}
+                        disabled={!!choiceMade}
+                      >
+                        {choice.label}
+                      </button>
+                      
+                      {/* Progress Bar */}
+                      {holdingChoiceId === choice.id && holdProgress > 0 && (
+                        <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-b-lg transition-all"
+                          style={{ width: `${holdProgress}%` }}
+                        />
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -527,13 +605,6 @@ function App() {
               )}
               
               <div className="flex gap-3 mb-6">
-                <button
-                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold disabled:opacity-50 transition-all"
-                  onClick={handleConfirm}
-                  disabled={!selectedChoice || !!choiceMade}
-                >
-                  ✓ Confirm
-                </button>
                 <button
                   className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 transition-all"
                   onClick={handleNext}
