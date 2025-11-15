@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { initialGameState, initialStatsForScenario, type GameState, type ScenarioId } from "./gameState";
-import { pickEvent, applyEffects, setCustomEvents, type GameEvent, type EventChoice } from "./events";
+import { pickEvent, applyEffects, setCustomEvents, customEvents, type GameEvent, type EventChoice } from "./events";
 import { endOfPeriodTick } from "./finance";
 import { saveGame, loadGame, clearGame } from "./persistence";
 import "./App.css";
@@ -33,19 +33,36 @@ function StatBar({ label, value, min = 0, max = 100, color = "blue" }: { label: 
 
 function App() {
   const saved = loadGame();
-  const [game, setGame] = useState<GameState>(() => saved ?? { ...initialGameState, scenarioId: 'custom', lastSeen: {}, log: ["Welcome! Please complete the quick survey to start."] });
+  const [game, setGame] = useState<GameState>(() => saved ?? { ...initialGameState });
   const [event, setEvent] = useState<GameEvent>(() => {
     const g = saved ?? initialGameState;
     return pickEvent(g);
   });
   const [choiceMade, setChoiceMade] = useState<EventChoice | null>(null);
-  const [showSurvey, setShowSurvey] = useState(!saved);
+  const [showSurvey, setShowSurvey] = useState(false);
   const [profile, setProfile] = useState({ knowledge: 'beginner', risk: 'medium', region: 'US', income: 2500, savings: 1000, debt: 0, goals: 'save more' });
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   useEffect(() => {
     saveGame(game);
   }, [game]);
+
+  // If a saved game loads with custom scenario but no custom events (fresh reload), prompt survey
+  useEffect(() => {
+    if (game.scenarioId === 'custom' && customEvents.length === 0) {
+      setShowSurvey(true);
+    }
+  }, [game.scenarioId]);
+
+  // Ensure we always have an event to display (defensive)
+  useEffect(() => {
+    if (!event) {
+      setEvent(pickEvent(game));
+    }
+  }, [event, game]);
+
+  // Backend API base: configurable via VITE_API_BASE, defaults to same host on port 8787
+  const apiBase = import.meta.env.VITE_API_BASE ?? `${window.location.protocol}//${window.location.hostname}:8787`;
 
 
 
@@ -111,11 +128,13 @@ function App() {
                 setChoiceMade(null);
                 return;
               }
+              // For predefined scenarios, do not show survey, just use predefined events
               const freshStats = initialStatsForScenario(sc);
               const newState: GameState = { ...initialGameState, stats: freshStats, scenarioId: sc, lastSeen: {}, log: [`Scenario set to ${sc}`] };
               setGame(newState);
               setEvent(pickEvent(newState));
               setChoiceMade(null);
+              setShowSurvey(false);
             }}
           >
             <option value="classic">Classic</option>
@@ -153,7 +172,7 @@ function App() {
         </div>
       </header>
       <main className="max-w-5xl mx-auto">
-        {showSurvey ? (
+        {showSurvey && game.scenarioId === 'custom' ? (
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4">Quick Financial Profile</h2>
             <form
@@ -163,7 +182,7 @@ function App() {
                 setLoadingAi(true);
                 setAiError(null);
                 try {
-                  const resp = await fetch('http://localhost:8787/api/generate-events', {
+                  const resp = await fetch(`${apiBase}/api/generate-events`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(profile),

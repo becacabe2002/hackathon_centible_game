@@ -408,7 +408,8 @@ function weightedRandom<T>(items: { item: T; weight: number }[]): T {
 // Select a random event with cooldowns and tag variety, from scenario pack
 export function pickEvent(state: GameState): GameEvent {
   const { stats, lastEventId, lastTag, lastSeen, scenarioId } = state;
-  const pack = scenarioId === "custom" ? customEvents : (scenarioEvents[scenarioId] ?? classicEvents);
+  const sourcePack = scenarioId === "custom" ? customEvents : (scenarioEvents[scenarioId] ?? classicEvents);
+  const pack = sourcePack.length > 0 ? sourcePack : classicEvents;
   const now = stats.month;
 
   const candidates = pack.filter((ev) => {
@@ -428,7 +429,12 @@ export function pickEvent(state: GameState): GameEvent {
 
   if (weighted.length === 0) {
     const fallback = pack.filter((ev) => !ev.condition || ev.condition(stats));
-    return fallback[Math.floor(Math.random() * fallback.length)];
+    if (fallback.length > 0) {
+      return fallback[Math.floor(Math.random() * fallback.length)];
+    }
+    // Last resort: use classic pack to ensure we always return something
+    const classicFallback = classicEvents.filter((ev) => !ev.condition || ev.condition(stats));
+    return classicFallback[Math.floor(Math.random() * classicFallback.length)] || classicEvents[0];
   }
 
   return weightedRandom(weighted);
