@@ -128,7 +128,7 @@ function App() {
     setGame((g) => ({
       ...g,
       stats: newStats,
-      log: [...g.log, selectedChoice.log],
+      log: [selectedChoice.log, ...g.log],
       lastEventId: event.id,
       lastTag: event.tag,
       lastSeen: { ...g.lastSeen, [event.id]: g.stats.month },
@@ -145,7 +145,7 @@ function App() {
       return {
         ...g,
         stats: tick.stats,
-        log: [...g.log, ...tick.logs],
+        log: [...tick.logs, ...g.log],
       };
     });
     setChoiceMade(null);
