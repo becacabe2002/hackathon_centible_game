@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./server
+    environment:
+      - OPENAI_API_KEY=your-openai-api-key-here
+      - OPENAI_MODEL=gpt-4o-mini
+      - PORT=8787
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+
+  frontend:
+    build: ./game
+    ports:
+      - "80:80"
+    restart: unless-stopped
