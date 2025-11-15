@@ -57,7 +57,6 @@ function App() {
     return pickEvent(g);
   });
   const [choiceMade, setChoiceMade] = useState<EventChoice | null>(null);
-  const [selectedChoice, setSelectedChoice] = useState<EventChoice | null>(null);
   const [holdProgress, setHoldProgress] = useState(0);
   const [holdingChoiceId, setHoldingChoiceId] = useState<string | null>(null);
   const [showSurvey, setShowSurvey] = useState(false);
@@ -156,7 +155,6 @@ function App() {
       if (elapsed >= HOLD_TIME) {
         clearInterval(holdTimerRef.current!);
         holdTimerRef.current = null;
-        setSelectedChoice(choice);
         setHoldingChoiceId(null);
         handleConfirmSelection(choice);
       }
@@ -204,38 +202,8 @@ function App() {
     setChoiceMade(choice);
   };
 
-  const handleConfirm = () => {
-    if (!selectedChoice || choiceMade) return;
-    setGame((g) => {
-      const newStats = applyEffects(g.stats, selectedChoice.effects);
-      const updated: GameState = {
-        ...g,
-        stats: newStats,
-        log: [selectedChoice.log, ...g.log],
-        lastEventId: event.id,
-        lastTag: event.tag,
-        lastSeen: { ...g.lastSeen, [event.id]: g.stats.month },
-      };
-      const win = checkWin(updated);
-      const lose = checkLose(updated.stats);
-      if (win.win) {
-        return {
-          ...updated,
-          gameOver: true,
-          result: { status: 'win', message: win.message ?? 'You achieved your goal!' },
-        };
-      }
-      if (lose.lose) {
-        return {
-          ...updated,
-          gameOver: true,
-          result: { status: 'lose', message: lose.message ?? 'Game over.' },
-        };
-      }
-      return updated;
-    });
-    setChoiceMade(selectedChoice);
-  };
+  // Confirmation of a selected choice is handled via handleConfirmSelection (long-press flow),
+  // so the separate handleConfirm helper was removed to avoid an unused declaration.
 
   const handleNext = () => {
     setGame((g) => {
@@ -261,7 +229,6 @@ function App() {
       return updated;
     });
     setChoiceMade(null);
-    setSelectedChoice(null);
   };
 
   const { stats, log } = game;
@@ -300,7 +267,6 @@ function App() {
                     setGame(newState);
                     setShowSurvey(true);
                     setChoiceMade(null);
-                    setSelectedChoice(null);
                     return;
                   }
                   const freshStats = initialStatsForScenario(sc);
@@ -308,7 +274,6 @@ function App() {
                   setGame(newState);
                   setEvent(pickEvent(newState));
                   setChoiceMade(null);
-                  setSelectedChoice(null);
                   setShowSurvey(false);
                 }}
               >
@@ -334,7 +299,6 @@ function App() {
                   setGame(fresh);
                   setEvent(pickEvent(fresh));
                   setChoiceMade(null);
-                  setSelectedChoice(null);
                 }}
               >
                 🔄 New Game
@@ -376,7 +340,6 @@ function App() {
                     setGame(reset);
                     setEvent(pickEvent(reset));
                     setChoiceMade(null);
-                    setSelectedChoice(null);
                   }}
                 >
                   🔁 Replay Scenario
@@ -441,7 +404,6 @@ function App() {
                   setGame(newState);
                   setEvent(pickEvent(newState));
                   setChoiceMade(null);
-                  setSelectedChoice(null);
                   setShowSurvey(false);
                 } catch (err: unknown) {
                   const msg = err instanceof Error ? err.message : String(err);

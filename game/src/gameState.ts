@@ -52,7 +52,7 @@ export function initialStatsForScenario(scenarioId: ScenarioId): GameStats {
         budget: 0,
         impulse: 35,
         savings: 300,
-        debt: 5000, // student loan
+        debt: 2000, // student loan
         income: 900,
         fixedExpenses: 800,
         happiness: 65,
@@ -63,9 +63,9 @@ export function initialStatsForScenario(scenarioId: ScenarioId): GameStats {
         month: 1,
         budget: 0,
         impulse: 45,
-        savings: 2000,
+        savings: 3000,
         debt: 8000,
-        income: 1200, // low salary early on
+        income: 4200, // low salary early on
         fixedExpenses: 1500,
         happiness: 70,
         stress: 55,
