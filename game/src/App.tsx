@@ -61,7 +61,7 @@ function App() {
   const [holdProgress, setHoldProgress] = useState(0);
   const [holdingChoiceId, setHoldingChoiceId] = useState<string | null>(null);
   const [showSurvey, setShowSurvey] = useState(false);
-  const [profile, setProfile] = useState({ knowledge: 'beginner', risk: 'medium', region: 'US', income: 2500, savings: 1000, debt: 0, goals: 'save more' });
+  const [profile, setProfile] = useState({ knowledge: 'beginner', risk: 'medium', region: 'US', income: 2500, fixedExpenses: initialStatsForScenario('classic').fixedExpenses, savings: 1000, debt: 0, goals: 'save more' });
   const [loadingAi, setLoadingAi] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -403,6 +403,12 @@ function App() {
                 setLoadingAi(true);
                 setAiError(null);
                 try {
+                  // Basic validation
+                  if (Number.isNaN(Number(profile.income)) || Number(profile.income) < 0) throw new Error('Income must be a non-negative number');
+                  if (Number.isNaN(Number(profile.fixedExpenses)) || Number(profile.fixedExpenses) < 0) throw new Error('Monthly Fixed Expenses must be a non-negative number');
+                  if (Number.isNaN(Number(profile.savings)) || Number(profile.savings) < 0) throw new Error('Savings must be a non-negative number');
+                  if (Number.isNaN(Number(profile.debt)) || Number(profile.debt) < 0) throw new Error('Debt must be a non-negative number');
+
                   const resp = await fetch(`${apiBase}/api/generate-events`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -416,6 +422,8 @@ function App() {
                   const computedStats = {
                     ...base,
                     income: Number(profile.income) || base.income,
+                    fixedExpenses: Number(profile.fixedExpenses) || base.fixedExpenses,
+                    budget: (Number(profile.income) || base.income) - (Number(profile.fixedExpenses) || base.fixedExpenses),
                     savings: Number(profile.savings) || base.savings,
                     debt: Number(profile.debt) || base.debt,
                     impulse: riskImpulse,
@@ -464,10 +472,17 @@ function App() {
                 <input className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.region} onChange={(e) => setProfile({ ...profile, region: e.target.value })} placeholder="e.g., US, UK, Singapore" />
               </label>
               <label className="flex flex-col gap-2">
-                <span className="font-semibold text-gray-800">💵 Monthly Income</span>
+                <span className="font-semibold text-gray-800">💵 Monthly Income ($)</span>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-600">$</span>
-                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.income} onChange={(e) => setProfile({ ...profile, income: Number(e.target.value) })} />
+                  <input type="number" min={0} className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.income} onChange={(e) => setProfile({ ...profile, income: Number(e.target.value) })} />
+                </div>
+              </label>
+              <label className="flex flex-col gap-2">
+                <span className="font-semibold text-gray-800">📆 Monthly Fixed Expenses ($)</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-600">$</span>
+                  <input type="number" min={0} className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.fixedExpenses} onChange={(e) => setProfile({ ...profile, fixedExpenses: Number(e.target.value) })} />
                 </div>
               </label>
               <label className="flex flex-col gap-2">

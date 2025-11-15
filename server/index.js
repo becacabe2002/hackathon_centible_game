@@ -16,7 +16,7 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const PORT = process.env.PORT || 8787;
 
-const systemPrompt = `You are a game content designer for a financial life simulator. 
+const systemPrompt = `You are a game content designer for a financial life simulator.
 Generate events and a scenario goal as strict JSON following these TypeScript types:
 
 type EventChoice = { id: string; label: string; effects: Partial<{ budget:number; impulse:number; savings:number; debt:number; income:number; fixedExpenses:number; happiness:number; stress:number; }>; log: string; explain?: string };
@@ -49,14 +49,21 @@ type EventsResponse = {
 };
 
 Rules:
-- Return a single JSON object of type EventsResponse.
-- Tailor events and goal to the provided player profile (knowledge, risk tolerance, region, income, savings, debt, goals).
+- Return a single JSON object of type EventsResponse. Output ONLY valid JSON for EventsResponse. No Markdown, no prose, no backticks.
+- Tailor events and goal to the provided player profile (knowledge, risk tolerance, region, income, savings, debt, fixedExpenses, goals). Explicitly consider fixedExpenses when scaling money amounts.
+- EventsResponse.events must contain exactly 20 events.
+- Tags must be balanced: exactly 4 'career', 4 'lifestyle', 4 'finance', 4 'social', and 4 'risk' events.
+- Enforce uniqueness: all event ids and titles must be unique. Avoid near-duplicates (do not repeat the same scenario with only numbers changed).
+- Prohibit "Debt Repayment" and "Cut/Negotiate Recurring Expenses" events; those are handled by the game separately. Do not create events primarily about paying down debt or cutting recurring bills.
+- Scale money deltas to the player's profile while keeping realistic caps:
+  • income/fixedExpenses deltas: about ±5–20% of the player's income/fixedExpenses, capped within ±1500 absolute; round to sensible increments.
+  • savings deltas: about ±5–25% of (income - fixedExpenses) or within ±50–500 when budget is small/negative.
+  • debt deltas: about ±3–15% of current debt (use negative for repayments, positive for new debt), cap within ±2000; avoid zero if the event is about debt change.
+  • impulse: ±1–10; happiness/stress: ±1–10.
+- Provide concise, varied "explain" text for each choice: 1–2 short sentences with cause→effect reasoning. No Markdown.
+- Include a cooldown on each event to reduce repetition. You may include optional weight to influence distribution.
 - goal.description should summarize the player's main financial goal in 1 short sentence.
-- goal.winCondition must be realistic and achievable given their profile.
-- Use small, realistic deltas for effects (e.g., savings +/- 50..500, impulse +/- 1..10, income/fixedExpenses +/- 50..300).
-- Ensure variety of tags and include cooldown to avoid repeats.
-- For each choice, include an "explain" field: 1–2 short sentences in plain language explaining why the effects happen (cause → effect). No Markdown.
-- Output ONLY valid JSON for EventsResponse. No Markdown, no prose, no backticks.`;
+- goal.winCondition must be realistic and achievable given their profile, and may reference savings, debt, income, impulse, stress, happiness, or fixedExpenses.`;
 
 app.post('/api/generate-events', async (req, res) => {
   try {
