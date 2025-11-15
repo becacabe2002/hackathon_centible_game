@@ -78,7 +78,7 @@ export function initialStatsForScenario(scenarioId: ScenarioId): GameStats {
 
 export const initialGameState: GameState = {
   stats: { ...baseStats },
-  log: ["Welcome to Centible Life!"],
+  log: ["Welcome to Centsible Game!"],
   gameOver: false,
   lastSeen: {},
   scenarioId: "classic",

@@ -251,7 +251,7 @@ function App() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-                💰 Centible Life
+                💰 The Centsible Game
               </h1>
               <p className="text-gray-600 text-sm mt-1">Navigate your financial journey</p>
             </div>
