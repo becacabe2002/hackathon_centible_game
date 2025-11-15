@@ -3,6 +3,7 @@ import { initialGameState, initialStatsForScenario, type GameState, type Scenari
 import { pickEvent, applyEffects, setCustomEvents, customEvents, type GameEvent, type EventChoice, type EventEffect } from "./events";
 import { endOfPeriodTick } from "./finance";
 import { saveGame, loadGame, clearGame } from "./persistence";
+import { checkWin, checkLose, defaultScenarioGoals } from "./goals";
 import "./App.css";
 
 function StatBar({ label, value, min = 0, max = 100, color = "blue", icon }: { label: string; value: number; min?: number; max?: number; color?: "blue" | "green" | "red" | "yellow" | "emerald" | "indigo"; icon?: string }) {
@@ -141,29 +142,59 @@ function App() {
 
   const handleConfirm = () => {
     if (!selectedChoice || choiceMade) return;
-    const newStats = applyEffects(game.stats, selectedChoice.effects);
-    setGame((g) => ({
-      ...g,
-      stats: newStats,
-      log: [selectedChoice.log, ...g.log],
-      lastEventId: event.id,
-      lastTag: event.tag,
-      lastSeen: { ...g.lastSeen, [event.id]: g.stats.month },
-    }));
+    setGame((g) => {
+      const newStats = applyEffects(g.stats, selectedChoice.effects);
+      const updated: GameState = {
+        ...g,
+        stats: newStats,
+        log: [selectedChoice.log, ...g.log],
+        lastEventId: event.id,
+        lastTag: event.tag,
+        lastSeen: { ...g.lastSeen, [event.id]: g.stats.month },
+      };
+      const win = checkWin(updated);
+      const lose = checkLose(updated.stats);
+      if (win.win) {
+        return {
+          ...updated,
+          gameOver: true,
+          result: { status: 'win', message: win.message ?? 'You achieved your goal!' },
+        };
+      }
+      if (lose.lose) {
+        return {
+          ...updated,
+          gameOver: true,
+          result: { status: 'lose', message: lose.message ?? 'Game over.' },
+        };
+      }
+      return updated;
+    });
     setChoiceMade(selectedChoice);
   };
 
   const handleNext = () => {
     setGame((g) => {
       const tick = endOfPeriodTick(g.stats);
-      const nextStateForPick: GameState = { ...g, stats: tick.stats };
-      const ev = pickEvent(nextStateForPick);
-      setEvent(ev);
-      return {
+      const updated: GameState = {
         ...g,
         stats: tick.stats,
         log: [...tick.logs, ...g.log],
       };
+      const win = checkWin(updated);
+      const lose = checkLose(updated.stats);
+      if (win.win || lose.lose) {
+        return {
+          ...updated,
+          gameOver: true,
+          result: win.win
+            ? { status: 'win', message: win.message ?? 'You achieved your goal!' }
+            : { status: 'lose', message: lose.message ?? 'Game over.' },
+        };
+      }
+      const ev = pickEvent(updated);
+      setEvent(ev);
+      return updated;
     });
     setChoiceMade(null);
     setSelectedChoice(null);
@@ -255,6 +286,50 @@ function App() {
         </div>
       </header>
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {game.gameOver && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full border border-gray-200 text-center">
+              <div className="text-5xl mb-4">{game.result?.status === 'win' ? '🏆' : '💥'}</div>
+              <h2 className="text-3xl font-extrabold mb-2">
+                {game.result?.status === 'win' ? 'Congratulations!' : 'Game Over'}
+              </h2>
+              <p className="text-gray-700 mb-6">{game.result?.message}</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
+                  onClick={() => {
+                    const freshStats = initialStatsForScenario(game.scenarioId);
+                    const reset: GameState = {
+                      ...initialGameState,
+                      stats: freshStats,
+                      scenarioId: game.scenarioId,
+                      lastSeen: {},
+                      log: ["New game started."],
+                      // Preserve custom goal when replaying custom scenario
+                      goalDescription: game.goalDescription,
+                      winCondition: game.winCondition,
+                    };
+                    setGame(reset);
+                    setEvent(pickEvent(reset));
+                    setChoiceMade(null);
+                    setSelectedChoice(null);
+                  }}
+                >
+                  🔁 Replay Scenario
+                </button>
+                <button
+                  className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
+                  onClick={() => {
+                    // Allow switching scenario after closing popup
+                    setGame((g) => ({ ...g, gameOver: false, result: undefined }));
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {showSurvey && game.scenarioId === 'custom' ? (
           <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Let's Learn About You</h2>
@@ -281,7 +356,16 @@ function App() {
                     debt: Number(profile.debt) || base.debt,
                     impulse: riskImpulse,
                   };
-                  const newState: GameState = { ...initialGameState, stats: computedStats, scenarioId: 'custom', lastSeen: {}, log: [`Loaded ${data.events?.length ?? 0} AI events`] };
+                  const goalFromAi = data.goal ?? null;
+                  const newState: GameState = {
+                    ...initialGameState,
+                    stats: computedStats,
+                    scenarioId: 'custom',
+                    lastSeen: {},
+                    log: [`Loaded ${data.events?.length ?? 0} AI events`],
+                    goalDescription: goalFromAi?.description,
+                    winCondition: goalFromAi?.winCondition,
+                  };
                   setGame(newState);
                   setEvent(pickEvent(newState));
                   setChoiceMade(null);
@@ -353,11 +437,17 @@ function App() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Sidebar */}
             <aside className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 lg:col-span-1 order-2 lg:order-1">
-              <div className="mb-6 pb-4 border-b border-gray-200">
+              <div className="mb-4 pb-4 border-b border-gray-200">
                 <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-4 py-2">
                   <span className="text-2xl">📅</span>
                   <span className="font-bold text-gray-800">Month {stats.month}</span>
                 </div>
+              </div>
+              <div className="mb-6 pb-4 border-b border-gray-200">
+                <p className="text-xs font-bold text-gray-700 mb-1 uppercase">🎯 Goal</p>
+                <p className="text-sm text-gray-800">
+                  {game.goalDescription ?? defaultScenarioGoals[game.scenarioId].description}
+                </p>
               </div>
               
               <div className="space-y-4 mb-6 pb-4 border-b border-gray-200">

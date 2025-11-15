@@ -14,14 +14,22 @@ export type GameStats = {
   stress: number; // 0-100
 };
 
+export type GameResult = {
+  status: "win" | "lose";
+  message: string;
+};
+
 export type GameState = {
   stats: GameStats;
   log: string[];
   gameOver: boolean;
+  result?: GameResult;
   lastEventId?: string;
   lastTag?: string;
   lastSeen: Record<string, number>; // eventId -> month last seen
   scenarioId: ScenarioId; // which scenario determines event pack
+  goalDescription?: string;
+  winCondition?: import("./goals").WinCondition;
 };
 
 export const baseStats: GameStats = {
@@ -44,7 +52,7 @@ export function initialStatsForScenario(scenarioId: ScenarioId): GameStats {
         budget: 0,
         impulse: 35,
         savings: 300,
-        debt: 12000, // student loan
+        debt: 5000, // student loan
         income: 900,
         fixedExpenses: 800,
         happiness: 65,
@@ -56,7 +64,7 @@ export function initialStatsForScenario(scenarioId: ScenarioId): GameStats {
         budget: 0,
         impulse: 45,
         savings: 2000,
-        debt: 0,
+        debt: 8000,
         income: 1200, // low salary early on
         fixedExpenses: 1500,
         happiness: 70,
