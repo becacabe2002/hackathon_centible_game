@@ -10,25 +10,25 @@ function StatBar({ label, value, min = 0, max = 100, color = "blue", icon }: { l
   const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
   const colorClass = (
     {
-      blue: "bg-gradient-to-r from-blue-400 to-blue-600",
-      green: "bg-gradient-to-r from-green-400 to-green-600",
+      blue: "bg-gradient-to-r from-pine-200 to-pine-600",
+      green: "bg-gradient-to-r from-leaf-500 to-leaf-700",
       red: "bg-gradient-to-r from-red-400 to-red-600",
       yellow: "bg-gradient-to-r from-yellow-400 to-yellow-600",
-      emerald: "bg-gradient-to-r from-emerald-400 to-emerald-600",
-      indigo: "bg-gradient-to-r from-indigo-400 to-indigo-600",
+      emerald: "bg-gradient-to-r from-leaf-500 to-leaf-700",
+      indigo: "bg-gradient-to-r from-pine-200 to-pine-600",
     } as const
-  )[color] ?? "bg-gradient-to-r from-blue-400 to-blue-600";
+  )[color] ?? "bg-gradient-to-r from-pine-200 to-pine-600";
 
   const textColorClass = (
     {
-      blue: "text-blue-600",
-      green: "text-green-600",
+      blue: "text-pine-600",
+      green: "text-leaf-600",
       red: "text-red-600",
       yellow: "text-yellow-600",
-      emerald: "text-emerald-600",
-      indigo: "text-indigo-600",
+      emerald: "text-leaf-600",
+      indigo: "text-pine-600",
     } as const
-  )[color] ?? "text-blue-600";
+  )[color] ?? "text-pine-600";
 
   return (
     <div className="mb-4">
@@ -262,7 +262,7 @@ function App() {
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-mint-100 via-mint-50 to-lime-300 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md">
           <div className="text-4xl mb-4">⚠️</div>
           <p className="text-gray-700 text-lg font-semibold mb-2">No Events Available</p>
@@ -272,19 +272,19 @@ function App() {
     );
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-mint-100 via-lime-300 to-leaf-500">
       <header className="bg-white shadow-md border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+              <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pine-600 to-leaf-600">
                 💰 The Centsible Game
               </h1>
               <p className="text-gray-600 text-sm mt-1">Navigate your financial journey</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 items-stretch">
               <select
-                className="px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold text-gray-800 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200"
+                className="px-4 py-2 border-2 border-gray-300 rounded-lg font-semibold text-gray-800 focus:outline-none focus:border-pine-600 focus:ring-1 focus:ring-mint-200"
                 value={game.scenarioId}
                 onChange={(e) => {
                   const sc = (e.target as HTMLSelectElement).value as ScenarioId;
@@ -331,7 +331,7 @@ function App() {
                 🔄 New Game
               </button>
               <button
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg transition-all"
+                className="px-4 py-2 rounded-lg bg-pine-600 hover:bg-pine-700 text-white font-semibold hover:shadow-lg transition-all"
                 onClick={() => saveGame(game)}
               >
                 💾 Save
@@ -351,7 +351,7 @@ function App() {
               <p className="text-gray-700 mb-6">{game.result?.message}</p>
               <div className="flex gap-3 justify-center">
                 <button
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
+                  className="px-6 py-3 bg-pine-600 hover:bg-pine-700 text-white rounded-lg font-bold"
                   onClick={() => {
                     const freshStats = initialStatsForScenario(game.scenarioId);
                     const reset: GameState = {
@@ -442,7 +442,7 @@ function App() {
             >
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">🧠 Financial Knowledge</span>
-                <select className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.knowledge} onChange={(e) => setProfile({ ...profile, knowledge: e.target.value })}>
+                <select className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-pine-600" value={profile.knowledge} onChange={(e) => setProfile({ ...profile, knowledge: e.target.value })}>
                   <option value="beginner">Beginner - Just starting out</option>
                   <option value="intermediate">Intermediate - Some experience</option>
                   <option value="advanced">Advanced - Well-versed</option>
@@ -450,7 +450,7 @@ function App() {
               </label>
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">📊 Risk Tolerance</span>
-                <select className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.risk} onChange={(e) => setProfile({ ...profile, risk: e.target.value })}>
+                <select className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-pine-600" value={profile.risk} onChange={(e) => setProfile({ ...profile, risk: e.target.value })}>
                   <option value="low">Low - Play it safe</option>
                   <option value="medium">Medium - Balanced approach</option>
                   <option value="high">High - Take bold moves</option>
@@ -458,43 +458,43 @@ function App() {
               </label>
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">🌍 Region/Country</span>
-                <input className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.region} onChange={(e) => setProfile({ ...profile, region: e.target.value })} placeholder="e.g., US, UK, Singapore" />
+                <input className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-pine-600" value={profile.region} onChange={(e) => setProfile({ ...profile, region: e.target.value })} placeholder="e.g., US, UK, Singapore" />
               </label>
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">💵 Monthly Income ($)</span>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-600">$</span>
-                  <input type="number" min={0} className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.income} onChange={(e) => setProfile({ ...profile, income: Number(e.target.value) })} />
+                  <input type="number" min={0} className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-pine-600" value={profile.income} onChange={(e) => setProfile({ ...profile, income: Number(e.target.value) })} />
                 </div>
               </label>
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">📆 Monthly Fixed Expenses ($)</span>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-600">$</span>
-                  <input type="number" min={0} className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.fixedExpenses} onChange={(e) => setProfile({ ...profile, fixedExpenses: Number(e.target.value) })} />
+                  <input type="number" min={0} className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-pine-600" value={profile.fixedExpenses} onChange={(e) => setProfile({ ...profile, fixedExpenses: Number(e.target.value) })} />
                 </div>
               </label>
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">🏦 Current Savings</span>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-600">$</span>
-                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.savings} onChange={(e) => setProfile({ ...profile, savings: Number(e.target.value) })} />
+                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-pine-600" value={profile.savings} onChange={(e) => setProfile({ ...profile, savings: Number(e.target.value) })} />
                 </div>
               </label>
               <label className="flex flex-col gap-2">
                 <span className="font-semibold text-gray-800">💳 Current Debt</span>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-600">$</span>
-                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-purple-500" value={profile.debt} onChange={(e) => setProfile({ ...profile, debt: Number(e.target.value) })} />
+                  <input type="number" className="w-full border-2 border-gray-300 rounded-lg px-3 py-2 pl-6 focus:outline-none focus:border-pine-600" value={profile.debt} onChange={(e) => setProfile({ ...profile, debt: Number(e.target.value) })} />
                 </div>
               </label>
               <label className="flex flex-col gap-2 md:col-span-2">
                 <span className="font-semibold text-gray-800">🎯 Your Financial Goal</span>
-                <textarea className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" value={profile.goals} onChange={(e) => setProfile({ ...profile, goals: e.target.value })} placeholder="e.g., Build an emergency fund, pay off debt, invest for retirement..." rows={2} />
+                <textarea className="border-2 border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-pine-600" value={profile.goals} onChange={(e) => setProfile({ ...profile, goals: e.target.value })} placeholder="e.g., Build an emergency fund, pay off debt, invest for retirement..." rows={2} />
               </label>
               {aiError && <div className="md:col-span-2 bg-red-100 border-2 border-red-400 text-red-800 px-4 py-3 rounded-lg font-semibold">{aiError}</div>}
               <div className="md:col-span-2 flex gap-3">
-                <button disabled={loadingAi} className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold hover:shadow-lg disabled:opacity-50" type="submit">
+                <button disabled={loadingAi} className="flex-1 px-6 py-3 bg-pine-600 hover:bg-pine-700 text-white rounded-lg font-bold hover:shadow-lg disabled:opacity-50" type="submit">
                   {loadingAi ? '⏳ Generating Events...' : '✨ Generate AI Events'}
                 </button>
                 <button type="button" className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50" onClick={() => setShowSurvey(false)}>Cancel</button>
@@ -506,7 +506,7 @@ function App() {
             {/* Sidebar */}
             <aside className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 lg:col-span-1 order-2 lg:order-1">
               <div className="mb-4 pb-4 border-b border-gray-200">
-                <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-4 py-2">
+                <div className="inline-flex items-center gap-2 bg-mint-100 rounded-full px-4 py-2">
                   <span className="text-2xl">📅</span>
                   <span className="font-bold text-gray-800">Month {stats.month}</span>
                 </div>
@@ -530,20 +530,20 @@ function App() {
                 <StatBar label="Impulse" value={stats.impulse} min={0} max={100} color="yellow" icon="🎯" />
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+              <div className="bg-mint-50 rounded-lg p-4 border border-mint-200">
                 <p className="text-xs font-bold text-gray-700 mb-3 uppercase">💰 Financial Overview</p>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-700">Income:</span>
-                    <span className="font-bold text-blue-600">${stats.income}</span>
+                    <span className="font-bold text-pine-600">${stats.income}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-700">Expenses:</span>
-                    <span className="font-bold text-orange-600">${stats.fixedExpenses}</span>
+                    <span className="font-bold text-lime-700">${stats.fixedExpenses}</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-blue-200">
+                    <div className="flex justify-between pt-2 border-t border-mint-200">
                     <span className="font-bold text-gray-800">Budget:</span>
-                    <span className={`font-bold ${(stats.income - stats.fixedExpenses) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`font-bold ${(stats.income - stats.fixedExpenses) >= 0 ? 'text-leaf-600' : 'text-red-600'}`}>
                       ${Math.max(0, stats.income - stats.fixedExpenses)}
                     </span>
                   </div>
@@ -554,13 +554,13 @@ function App() {
             {/* Main Content */}
             <section className="bg-white rounded-xl shadow-lg p-8 border border-gray-200 lg:col-span-2 order-1 lg:order-2">
               <div className="mb-8">
-                <div className="inline-block bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-full mb-4">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${
-                    event.tag === 'career' ? 'text-blue-700' :
-                    event.tag === 'lifestyle' ? 'text-pink-700' :
-                    event.tag === 'social' ? 'text-purple-700' :
-                    event.tag === 'finance' ? 'text-green-700' :
-                    'text-red-700'
+                <div className="inline-block bg-mint-100 px-4 py-2 rounded-full mb-4">
+                    <span className={`text-xs font-bold uppercase tracking-wider ${
+                    event.tag === 'career' ? 'text-pine-700' :
+                    event.tag === 'lifestyle' ? 'text-lime-700' :
+                    event.tag === 'social' ? 'text-leaf-700' :
+                    event.tag === 'finance' ? 'text-leaf-700' :
+                    'text-ink-900'
                   }`}>
                     {event.tag.toUpperCase()}
                   </span>
@@ -582,12 +582,12 @@ function App() {
                         title={choiceMade ? (choice.explain ?? synthesizeExplanation(choice.effects)) : undefined}
                         className={`w-full px-6 py-3 rounded-lg border-2 text-left font-semibold transition-all ${
                           choiceMade?.id === choice.id
-                            ? "bg-green-100 border-green-500 text-gray-900"
+                            ? "bg-mint-50 border-leaf-600 text-gray-900"
                             : (choiceMade
                                 ? "bg-gray-50 border-gray-200 text-gray-400"
                                 : (holdingChoiceId === choice.id
-                                    ? "bg-blue-50 border-blue-500 text-gray-900 scale-105"
-                                    : "bg-white border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-900"))
+                                    ? "bg-mint-50 border-pine-600 text-gray-900 scale-105"
+                                    : "bg-white border-gray-300 hover:border-pine-600 hover:bg-mint-100 text-gray-900"))
                         } disabled:opacity-50 select-none`}
                         disabled={!!choiceMade}
                       >
@@ -600,7 +600,7 @@ function App() {
                       
                       {/* Progress Bar */}
                       {holdingChoiceId === choice.id && holdProgress > 0 && (
-                        <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-b-lg transition-all"
+                        <div className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-pine-200 to-pine-600 rounded-b-lg transition-all"
                           style={{ width: `${holdProgress}%` }}
                         />
                       )}
@@ -610,14 +610,20 @@ function App() {
               </div>
               
               {choiceMade && (
-                <div className="mb-6 p-4 bg-green-100 border-2 border-green-500 rounded-lg">
-                  <p className="text-green-800 font-bold">✅ {choiceMade.log}</p>
+                <div className="mb-6 p-4 bg-mint-50 border-2 border-leaf-600 rounded-lg">
+                  <p className="text-leaf-700 font-bold">✅ {choiceMade.log}</p>
+                  <div className="mt-3 rounded-lg border border-mint-200 bg-mint-50 p-4">
+                    <p className="mb-1 text-xs font-bold uppercase tracking-wide text-pine-700">Impact</p>
+                    <p className="text-pine-800">
+                      {choiceMade.explain ?? synthesizeExplanation(choiceMade.effects)}
+                    </p>
+                  </div>
                 </div>
               )}
               
               <div className="flex gap-3 mb-6">
                 <button
-                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold disabled:opacity-50 transition-all"
+                  className="flex-1 px-6 py-3 bg-pine-600 hover:bg-pine-700 text-white rounded-lg font-bold disabled:opacity-50 transition-all"
                   onClick={handleNext}
                   disabled={!choiceMade}
                 >
@@ -633,7 +639,7 @@ function App() {
                   <ul className="text-sm text-gray-700 space-y-2">
                     {log.slice(0, 10).map((entry, i) => (
                       <li key={i} className="flex gap-2">
-                        <span className="text-blue-600 flex-shrink-0">→</span>
+                        <span className="text-pine-600 flex-shrink-0">→</span>
                         <span>{entry}</span>
                       </li>
                     ))}

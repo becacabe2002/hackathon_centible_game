@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* Theme palette: mint, lime, leaf, pine, ink */
+@theme {
+  --color-mint-50: #F2FBF7;
+  --color-mint-100: #E6F7F0;
+  --color-mint-200: #BBEED6;
+
+  --color-lime-300: #B8E28A;
+  --color-lime-700: #7BA74A;
+
+  --color-leaf-500: #5EC57E;
+  --color-leaf-600: #4FB671;
+  --color-leaf-700: #3F9C5D;
+
+  --color-pine-200: #C8DEE0;
+  --color-pine-600: #347175;
+  --color-pine-700: #2E6367;
+
+  --color-ink-900: #000000;
+}
