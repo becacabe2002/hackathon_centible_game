@@ -331,6 +331,7 @@ Rules:
   • debt deltas: about ±3–15% of current debt (use negative for repayments, positive for new debt), cap within ±2000; avoid zero if the event is about debt change.
   • impulse: ±1–10; happiness/stress: ±1–10.
 - Provide concise, varied "explain" text for each choice: 1–2 short sentences with cause→effect reasoning. No Markdown.
+- Choice labels must be plain, imperative actions with no numeric or stat hints (no $, +, -, %, numbers), no parentheses, and no stat names (savings, debt, income, fixed expenses, budget, happiness, stress, impulse). Outcome details and numbers must appear only in effects and the optional explain. Example: label: "Take the side gig"; explain: "You will earn extra cash but add stress." Not allowed: label: "Take the side gig (+$200, +5 stress)".
 - Include a cooldown on each event to reduce repetition. You may include optional weight to influence distribution.
 - Keep events varied, SFW, tone-appropriate, and non-duplicative.
 

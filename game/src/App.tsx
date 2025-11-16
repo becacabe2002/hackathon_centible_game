@@ -137,6 +137,13 @@ function App() {
     return rest ? `This will ${first}, ${rest}.` : `This will ${first}.`;
   }
 
+  // Ensure labels show only actions (no effect hints like "(+$200, -5 stress)")
+  function displayChoiceLabel(s: string): string {
+    // Strip a single trailing parenthetical that likely contains numbers, +/- or stat keywords
+    const EFFECT_HINT_RE = /\s*\((?:[^)]*[$+\-%\d]|[^)]*(?:savings|debt|income|fixed\s*expenses|budget|happiness|stress|impulse)[^)]*)\)\s*$/i;
+    return s.replace(EFFECT_HINT_RE, '').trim();
+  }
+
   const handleMouseDown = (choice: EventChoice) => {
     if (choiceMade) return;
     setHoldingChoiceId(choice.id);
@@ -561,7 +568,7 @@ function App() {
                         } disabled:opacity-50 select-none`}
                         disabled={!!choiceMade}
                       >
-                        {choice.label}
+                        {displayChoiceLabel(choice.label)}
                       </button>
                       
                       {/* Progress Bar */}
