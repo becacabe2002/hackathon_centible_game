@@ -65,7 +65,7 @@ function App() {
   const [aiError, setAiError] = useState<string | null>(null);
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdStartTimeRef = useRef<number | null>(null);
-  const HOLD_TIME = 1500; // 1.5 seconds to confirm
+  const HOLD_TIME = 1000; // 1 seconds to confirm
   useEffect(() => {
     saveGame(game);
   }, [game]);
@@ -568,7 +568,7 @@ function App() {
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">{event.description}</p>
                 
-                <p className="text-center text-sm text-gray-500 mb-4">👇 Hold on a choice for 1.5 seconds to select it</p>
+                <p className="text-center text-sm text-gray-500 mb-4">👇 Hold on a choice for 1 seconds to select it</p>
                 
                 <div className="flex flex-col gap-3">
                   {event.choices.map((choice) => (
