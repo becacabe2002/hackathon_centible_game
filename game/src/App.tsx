@@ -137,6 +137,26 @@ function App() {
     return rest ? `This will ${first}, ${rest}.` : `This will ${first}.`;
   }
 
+  // Compact effect token summary for labels after selection
+  function shortEffectSummary(effects: EventEffect): string {
+    const tokens: string[] = [];
+    const signNum = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
+    const money = (n: number) => (n >= 0 ? `+$${Math.abs(n)}` : `-$${Math.abs(n)}`);
+
+    const { savings, debt, income, fixedExpenses, happiness, stress, impulse } = effects;
+
+    if (typeof savings === 'number' && savings !== 0) tokens.push(`${money(savings)} savings`);
+    if (typeof debt === 'number' && debt !== 0) tokens.push(`${money(debt)} debt`);
+    if (typeof income === 'number' && income !== 0) tokens.push(`${money(income)} income`);
+    if (typeof fixedExpenses === 'number' && fixedExpenses !== 0) tokens.push(`${money(fixedExpenses)} fixedExpenses`);
+
+    if (typeof happiness === 'number' && happiness !== 0) tokens.push(`${signNum(happiness)} happiness`);
+    if (typeof stress === 'number' && stress !== 0) tokens.push(`${signNum(stress)} stress`);
+    if (typeof impulse === 'number' && impulse !== 0) tokens.push(`${signNum(impulse)} impulse`);
+
+    return tokens.join(', ');
+  }
+
   // Ensure labels show only actions (no effect hints like "(+$200, -5 stress)")
   function displayChoiceLabel(s: string): string {
     // Strip a single trailing parenthetical that likely contains numbers, +/- or stat keywords
@@ -559,16 +579,23 @@ function App() {
                         onMouseLeave={handleMouseUp}
                         onTouchStart={() => handleMouseDown(choice)}
                         onTouchEnd={handleMouseUp}
+                        title={choiceMade ? (choice.explain ?? synthesizeExplanation(choice.effects)) : undefined}
                         className={`w-full px-6 py-3 rounded-lg border-2 text-left font-semibold transition-all ${
                           choiceMade?.id === choice.id
                             ? "bg-green-100 border-green-500 text-gray-900"
-                            : (holdingChoiceId === choice.id
-                                ? "bg-blue-50 border-blue-500 text-gray-900 scale-105"
-                                : "bg-white border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-900")
+                            : (choiceMade
+                                ? "bg-gray-50 border-gray-200 text-gray-400"
+                                : (holdingChoiceId === choice.id
+                                    ? "bg-blue-50 border-blue-500 text-gray-900 scale-105"
+                                    : "bg-white border-gray-300 hover:border-purple-500 hover:bg-purple-50 text-gray-900"))
                         } disabled:opacity-50 select-none`}
                         disabled={!!choiceMade}
                       >
-                        {displayChoiceLabel(choice.label)}
+                        {(() => {
+                          const base = displayChoiceLabel(choice.label);
+                          const suffix = choiceMade ? ` (${shortEffectSummary(choice.effects) || 'no change'})` : '';
+                          return base + suffix;
+                        })()}
                       </button>
                       
                       {/* Progress Bar */}
@@ -598,14 +625,7 @@ function App() {
                 </button>
               </div>
               
-              {choiceMade && (
-                <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                  <p className="text-sm text-gray-800 leading-relaxed">
-                    <span className="font-bold text-blue-600">📝 Impact: </span>
-                    {choiceMade.explain ?? synthesizeExplanation(choiceMade.effects)}
-                  </p>
-                </div>
-              )}
+              
               
               <div className="pt-4 border-t border-gray-200">
                 <h3 className="font-bold text-gray-800 mb-3">📜 Event Log</h3>
